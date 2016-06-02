@@ -43,21 +43,23 @@ xbuild_bindir="${xbuild_prefix}/bin"
 xbuild_libdir="${xbuild_prefix}/lib/xbuild"
 xbuild_datadir="${xbuild_prefix}/share/xbuild"
 
-XBUILD_OS_LIST=""
-for i in ${xbuild_libdir}/os/* ; do
-    if ([ -d "$i" ] && [ -r os.conf ] && {})
-        os_tag="`cat "${i}/os.conf" | grep "OS_TAG=" | cut -f 2 -d '"' -`"
-        os_name="`cat "${i}/os.conf" | grep "OS_NAME=" | cut -f 2 -d '"' -`"
+#xbuild_tmp_prefix=$(mktemp -d -u /tmp/xbuild.${LOGNAME:=$USER}.XXXX)
+xbuild_tmp_prefix="/tmp/xbuild"
+#trap "rm -rf ${xbuild_tmp_prefix}" EXIT
+if [ ! -d "$xbuild_tmp_prefix" ] ; then
+    mkdir -p "$xbuild_tmp_prefix"
+fi
 
-        if [ -z "$XBUILD_OS_LIST" ] ; then
-            XBUILD_OS_LIST="${os_tag}:${os_name}:${i}"
-        else
-            XBUILD_OS_LIST="${os_list};${os_tag}:${os_name}:${i}"
-        fi
-        unset -v os_tag os_name
+for i in ${xbuild_libdir}/os/* ; do
+    if ([ -d "$i" ] && [ -r ${i}/os.conf ]) ; then
+        os_tag="`cat "${i}/os.conf" | grep "XBUILD_OS_TAG=" | cut -f 2 -d '"' -`"
+        os_name="`cat "${i}/os.conf" | grep "XBUILD_OS_NAME=" | cut -f 2 -d '"' -`"
+        echo -n "${os_tag}:${os_name}:${i};" >> $xbuild_tmp_prefix/os.tmp
     fi
 done
+XBUILD_OS_LIST="`cat $xbuild_tmp_prefix/os.tmp`"
 readonly XBUILD_OS_LIST
+rm $xbuild_tmp_prefix/os.tmp
 
 # sourcing global config files
 for i in /etc /usr/local/etc ${xbuild_prefix}/etc ${HOME}/.loacal/etc; do
@@ -73,35 +75,10 @@ else
     xbuild_is_installed="no"
 fi
 
-xbuild_tmpdir="${XBUILD_TMP_PREFIX:=/etc}/xbuild.${LOGNAME:=$USER}"
-if [ ! -d "$xbuild_tmpdir}" ] ; then
-    mkdir -p "$xbuild_tmpdir"
-fi
+
 
 # check for host system
 xbuild_host="`uname -o`"
-
-#case "$xbuild_host" in
-#    FreeBSD)
-#        xbuild_host_is_freebsd="yes"
-#        freebsd_syssrc_dir="/usr/src"
-#        freebsd_sysdoc_dir="/usr/doc"
-#        freebsd_sysports_dir="/usr/ports"
-#        ;;
-#    NetBSD)
-#        xbuild_host_is_netbsd="yes"
-#        netbsd_syssrc_dir="/usr/src"
-#        netbsd_sysdoc_dir="/usr/doc"
-#        netbsd_syspkgsrc_dir="/usr/pkgsrc"
-#        ;;
-#    *)
-#        xbuild_host_is_unknown="yes"
-#        xbuild_host=`uname -o`
-#        ;;
-#esac
-#: ${xbuild_host_is_freebsd:="no"}
-#: ${xbuild_host_is_netbsd:="no"}
-#: ${xbuild_host_is_unknown:="no"}
 
 . ${xbuild_libdir}/misc.sh
 xbuild_dialog_backtitle="xbuild - Cross build toolkit for embedded platforms"
@@ -112,18 +89,15 @@ config_install() {
     # default installation dir
     # might be set in $X/etc/xbuild.rc
     : ${XBUILD_DEFAULT_ROOTDIR:="${HOME}/xbuild.root"}
-    install_log="/tmp/xbuild.${LOGNAME:=$USER}.install.log"
+    install_log="${xbuild_tmpdir}install.log"
 
-    #freebsd_src_releng_enable="`is_true $FREEBSD_SRC_RELENG`"
-
-
-
-#    . "${xbuild_libdir}/freebsd.sh"
-#    . "${xbuild_libdir}/netbsd.sh"
-
-#    . "${xbuild_libdir}/freebsd.install.sh"
-#    . "${xbuild_libdir}/netbsd.install.sh"
-
+    for i in `os_get_tags` ; do
+        libdir="`os_get_libdir_from_tag $i`"; local libdir
+        . "${libdir}/os.conf"
+        . "${libdir}/os.sh"
+        . "${libdir}/install.sh"
+        . "${libdir}/dialog.install.sh"
+    done
     . "${xbuild_libdir}/dialog.install.sh"
 }
 

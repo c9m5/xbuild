@@ -68,9 +68,9 @@ freebsd_dialog_install_sources() {
         esac
     done
 
-    tmpf="/tmp/xbuild.${LOGNAME:=$USER}.dlg.tmp"; local tmpf
-    cat > $tmpf << __EOF__
-__real_freebsd_sources_dialog() {
+    tmpf="${xbuild_tmp_prefix}/instosdlg.tmp"; local tmpf
+    cat >> $tmpf << __EOF__
+__real_freebsd_sources_dialog__() {
     src=\$(dialog --clear --stdout \\
         --backtitle "$xbuild_dialog_backtitle" \\
         --title "FreeBSD Sources" \\
@@ -80,7 +80,7 @@ __real_freebsd_sources_dialog() {
 }
 __EOF__
     . $tmpf
-    rm $tmpf
+    #rm $tmpf
     freebsd_src="`__real_freebsd_sources_dialog`"
     rv=$? ; local rv
     echo $rv

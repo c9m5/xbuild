@@ -74,6 +74,34 @@ dialog_max_height() {
     echo "`dialog --print-maxsize | cut -f 2 -w - | cut -f 1 -d , -`"
 }
 
+os_get_tags() {
+    n=1; local n
+    x=""; local x
+    while [ $n -gt 0 ] ; do
+        x="`echo "$XBUILD_OS_LIST" | cut -f $n -d ';' - | cut -f 1 -d ':' -`"
+        if [ -z "$x" ] ; then
+            n=0
+            return
+        fi
+        echo "$x"
+        n=$(( $n + 1 ))
+    done
+}
+
+os_get_names() {
+    n=1; local n
+    x=""; local x
+    while [ $n -gt 0 ] ; do
+        x="`echo "$XBUILD_OS_LIST" | cut -f $n -d ';' - | cut -f 2 -d ':' -`"
+        if [ -z "$x" ] ; then
+            n=0
+            return
+        fi
+        echo "$x"
+        n=$(( n + 1))
+    done
+}
+
 # Get the $OS_NAME from XBUILD_OS_LIST
 # $1 = $OS_TAG
 os_get_name_from_tag() {

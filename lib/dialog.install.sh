@@ -36,41 +36,33 @@
 xbuild_install_restart="yes"
 
 dialog_install_os() {
-    instos=$(dialog --clear --stdout --backtitle "$xbuild_dialog_backtitle" \
-        --title "Select operating systems for cross-compiling." \
-        --checklist "Choose OS(es) to install." 10 50 2\
-            "FreeBSD" "Install FreeBSD" on \
-            "NetBSD" "Install NetBSD" off)
-    rv=$? ; local rv
-    if [ $rv -eq 0 ] ; then
-        for i in $instos ; do
-            case $i in
-                FreeBSD)
-                    install_freebsd_enable="yes"
-                    ;;
-                NetBSD)
-                    install_netbsd_enable="yes"
-                    ;;
-            esac
-        done
-    else
-        xbuild_install_dialog=""
-    fi
-}
+    tmpf="${xbuild_tmp_prefix}/osinstdlg.tmp"
+    trap "rm -f $tmpf"
 
-
-dialog_install_netbsd_sources() {
-}
-
-dialog_install_netbsd() {
-    rv=1; local rv
-    while [ $rv -eq 1 ] ; do
-        dialog_install_netbsd_sources
-        rv=$1
+    listitems=""; local listitems
+    for i in `os_get_tags` ; do
+        os_name=$(os_get_name_from_tag "$i"); local os_name
+        clear
+        if [ "`${i}_is_host`" == "yes" ] ; then
+            status="on"
+        else
+            status="off"
+        fi
+        listitems="${listitems} \"$i\" \"Install $os_name\" $status"
     done
-
-    #dialog_install_netbsd_pkgsrc
-    #dialog_install_netbsd_docs
+    cat > $tmpf << __EOF__
+__real_install_os_dialog__() {
+    xbuild_install_os=\$(dialog --clear --stdout \\
+        --backtitle "$xbuild_dialog_backtitle" \\
+        --title "Select operating systems for cross-compiling." \\
+        --checklist "Choose OS(es) to install." 14 50 6 \\
+        $listitems)
+    return $?
+}
+__EOF__
+    . $tmpf
+    __real_install_os_dialog__
+    rv=$?
 }
 
 dialog_install() {
@@ -86,25 +78,6 @@ dialog_install() {
 
         #check which OS(es) to install
         dialog_install_os
-        if [ $? -ne 0 ] ; then
-            continue
-        fi
-
-        # freebsd installation
-        if [ "$install_freebsd_enable" == "yes" ] ; then
-            dialog_freebsd_install
-            if [ $? -ne 0 ] ; then
-                continue
-            fi
-        fi
-
-        # netbsd installation
-        if [ "$install_netbsd_enable" == "yes" ] ; then
-            dialog_install_netbsd
-            if [ $? -ne 0 ] ; then
-                continue
-            fi
-        fi
     done
 }
 

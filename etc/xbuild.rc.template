@@ -1,0 +1,11 @@
+#!/bin/sh
+
+# Sets the default installation directory.
+# XBUILD_DEFAULT_ROOTDIR="${HOME}/xbuild"
+
+################################################################################
+# For FreeBSD
+
+# Uncomment if you want to install release engineering source branches
+# FREEBSD_RELENG_ENABLE="yes"
+
