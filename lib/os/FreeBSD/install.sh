@@ -1,8 +1,8 @@
 #!/bin/sh
 #
 # Author(s): c9m5
-# File: xbuild-install
-# Description: install script for xbuild
+# File: lib/xbuild/os/freebsd/install.sh
+# Description: install script for FreeBSD target
 #
 ################################################################################
 # This is free and unencumbered software released into the public domain.      #
@@ -32,17 +32,4 @@
 ################################################################################
 #
 # Changelog:
-
-
-
-if [ ! "$xbuild_prefix" ] ; then
-    xbuild_prefix=`realpath $0`
-    xbuild_prefix="${xbuild_prefix%%/bin/xbuild-install}"; export xbuild_prefix
-fi
-
-. ${xbuild_prefix}/lib/xbuild/config.sh
-config_install
-
-dialog_install
-
 

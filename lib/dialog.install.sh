@@ -33,5 +33,78 @@
 #
 # Changelog:
 
+xbuild_install_restart="yes"
 
+dialog_install_os() {
+    instos=$(dialog --clear --stdout --backtitle "$xbuild_dialog_backtitle" \
+        --title "Select operating systems for cross-compiling." \
+        --checklist "Choose OS(es) to install." 10 50 2\
+            "FreeBSD" "Install FreeBSD" on \
+            "NetBSD" "Install NetBSD" off)
+    rv=$? ; local rv
+    if [ $rv -eq 0 ] ; then
+        for i in $instos ; do
+            case $i in
+                FreeBSD)
+                    install_freebsd_enable="yes"
+                    ;;
+                NetBSD)
+                    install_netbsd_enable="yes"
+                    ;;
+            esac
+        done
+    else
+        xbuild_install_dialog=""
+    fi
+}
+
+
+dialog_install_netbsd_sources() {
+}
+
+dialog_install_netbsd() {
+    rv=1; local rv
+    while [ $rv -eq 1 ] ; do
+        dialog_install_netbsd_sources
+        rv=$1
+    done
+
+    #dialog_install_netbsd_pkgsrc
+    #dialog_install_netbsd_docs
+}
+
+dialog_install() {
+    while [ "`echo $xbuild_install_restart`" == "yes" ] ; do
+        ninst=2
+        dialog --clear --yes-label "Continue" --no-label "Cancel" \
+            --yesno "You are about to install the xbuild-environment to your homedir." 6 40
+        rv=$? ; local rv
+        if [ $rv -ne 0 ] ; then
+            xbuild_install_restart="no"
+            return
+        fi
+
+        #check which OS(es) to install
+        dialog_install_os
+        if [ $? -ne 0 ] ; then
+            continue
+        fi
+
+        # freebsd installation
+        if [ "$install_freebsd_enable" == "yes" ] ; then
+            dialog_freebsd_install
+            if [ $? -ne 0 ] ; then
+                continue
+            fi
+        fi
+
+        # netbsd installation
+        if [ "$install_netbsd_enable" == "yes" ] ; then
+            dialog_install_netbsd
+            if [ $? -ne 0 ] ; then
+                continue
+            fi
+        fi
+    done
+}
 

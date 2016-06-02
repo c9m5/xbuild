@@ -50,4 +50,104 @@ is_true() {
     return 1
 }
 
+error() {
+    printerr="builtin echo"; local printerr
+    case $1 in
+        -e)
+            printerr="$printerr -e"
+            shift
+            ;;
+        -n)
+            printerr="$printerr -n"
+            shift
+            ;;
+    esac
+
+    $printerr "$*" >&2
+}
+
+dialog_max_width() {
+    echo "`dialog --print-maxsize | cut -f 3 -w -`"
+}
+
+dialog_max_height() {
+    echo "`dialog --print-maxsize | cut -f 2 -w - | cut -f 1 -d , -`"
+}
+
+# Get the $OS_NAME from XBUILD_OS_LIST
+# $1 = $OS_TAG
+os_get_name_from_tag() {
+    n=1; local n
+    x=""; local x
+    while [ $n -gt 0 ] ; do
+        x="`echo "$XBUILD_OS_LIST" | cut -f $n -d ';' -`"
+        if [ -z "$x" ] ; then
+            return 1
+        fi
+        if [ "`echo "$x" | cut -f 1 -d ':' -`" == "$1" ] ; then
+            echo "`echo "$x" | cut -f 2 -d ':'`"
+            n=0
+        else
+            n=$(( n + 1 ))
+        fi
+
+    done
+}
+
+# Get the $OS_LIBDIR from XBUILD_OS_LIST
+# $1 = $OS_TAG
+os_get_libdir_from_tag() {
+    n=1; local n
+    x=""; local x
+    while [ $n -gt 0 ] ; do
+        x="`echo "$XBUILD_OS_LIST" | cut -f $n -d ';' -`"
+        if [ -z "$x" ] ; then
+            return 1
+        fi
+        if [ "`echo "$x" | cut -f 1 -d ':' -`" == "$1" ] ; then
+            echo "`echo "$x" | cut -f 3 -d ':'`"
+            n=0
+        else
+            n=$(( n + 1 ))
+        fi
+    done
+}
+
+# Get $OS_TAG from XBUILD_OS_LIST.
+# $1 = $OS_NAME
+os_get_tag_from_name() {
+    n=1; local n
+    x=""; local x
+    while [ $n -gt 0 ] ; do
+        x="`echo "$XBUILD_OS_LIST" | cut -f $n -d ';' -`"
+        if [ -z "$x" ] ; then
+            return 1
+        fi
+        if [ "`echo "$x" | cut -f 2 -d ':' -`" == "$1" ] ; then
+            echo "`echo "$x" | cut -f 1 -d ':'`"
+            n=0
+        else
+            n=$(( n + 1 ))
+        fi
+    done
+}
+
+# Get $OS_LIBDIRDIR from XBUILD_OS_LIST
+# $1 = $OS_NAME
+os_get_libdir_from_name() {
+    n=1; local n
+    x=""; local x
+    while [ $n -gt 0 ] ; do
+        x="`echo "$XBUILD_OS_LIST" | cut -f $n -d ';' -`"
+        if [ -z "$x" ] ; then
+            return 1
+        fi
+        if [ "`echo "$x" | cut -f 2 -d ':' -`" == "$1" ] ; then
+            echo "`echo "$x" | cut -f 3 -d ':'`"
+            n=0
+        else
+            n=$(( n + 1 ))
+        fi
+    done
+}
 
