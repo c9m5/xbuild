@@ -42,7 +42,7 @@ freebsd_is_host() {
 }
 
 freebsd_have_system_sources() {
-    if ([ "$freebsd_is_host" == "yes" ] && [ -r "${freebsd_syssrc_dir}/Makefile" ]); then
+    if ([ "`freebsd_is_host`" == "yes" ] && [ -r "${freebsd_sys_src_dir}/Makefile" ]); then
         echo "yes"
     else
         echo "no"
@@ -50,7 +50,7 @@ freebsd_have_system_sources() {
 }
 
 freebsd_have_system_doc() {
-    if ([ "$freebsd_is_host" == "yes" ] && [ -r  "${freebsd_sysdoc_dir}/Makefile" ]); then
+    if ([ "`freebsd_is_host`" == "yes" ] && [ -r  "${freebsd_sys_doc_dir}/Makefile" ]); then
         echo "yes"
     else
         echo "no"
@@ -58,7 +58,7 @@ freebsd_have_system_doc() {
 }
 
 freebsd_have_system_ports() {
-    if ([ "$freebsd_is_host" == "yes" ] && [ -r "${freebsd_sysports_dir}/Makefile" ]) ; then
+    if ([ "`freebsd_is_host`" == "yes" ] && [ -r "${freebsd_sys_ports_dir}/Makefile" ]) ; then
         echo "yes"
     else
         echo "no"
@@ -81,7 +81,7 @@ freebsd_lookup_src() {
             src="${src} stable/`echo $i | cut -f 1 -d / -`"
         fi
     done
-    if [ "$freebsd_src_releng_enable" == "yes" ] ; then
+    if [ "$freebsd_releng_enable" == "yes" ] ; then
         for i in `svnlite ls $freebsd_svn_base/releng` ; do
             case $i in
                 ALBPHA*|BETA*)

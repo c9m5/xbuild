@@ -41,3 +41,23 @@ netbsd_is_host() {
     fi
 }
 
+netbsd_lookup_sources() {
+    tmpf="${xbuild_tmp_prefix}/netbsd.dir"
+    ftp -n "${ntbsd_ftp_root}/" 2&>1 << __EOF__
+dir . "$tmpf"
+__EOF__
+
+    items=""; local items
+    for i in `cat $tmpf | grep "NetBSD-" | -cut -f 9 -w -`; do
+        case $i in
+            NetBSD-archive|NetBSD-daily)
+                ;;
+            *)
+                items="${items} $i"
+                ;;
+    done
+    echo $items
+}
+
+
+

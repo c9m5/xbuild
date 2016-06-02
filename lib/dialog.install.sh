@@ -36,7 +36,7 @@
 xbuild_install_restart="yes"
 
 dialog_install_os() {
-    tmpf="${xbuild_tmp_prefix}/osinstdlg.tmp"
+    tmpf="${xbuild_tmp_prefix}/osinstdlg.tmp"; local tmpf
     trap "rm -f $tmpf"
 
     listitems=""; local listitems
@@ -78,6 +78,12 @@ dialog_install() {
 
         #check which OS(es) to install
         dialog_install_os
+        if ([ $? -ne 0 ] || [ ! "$xbuild_install_os" ]) ; then
+            continue
+        fi
+        for i in $xbuild_install_os; do
+            ${i}_dialog_install
+        done
     done
 }
 

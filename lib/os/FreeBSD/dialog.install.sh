@@ -34,10 +34,11 @@
 # Changelog:
 
 freebsd_dialog_install_sources() {
+    listitems=""; local listitems
     if [ "`freebsd_have_system_sources`" == "yes" ] ; then
         x="`cat "${freebsd_syssrc_dir}/sys/conf/newvers.sh" | grep "REVISION=" \
             | cut -f 2 -d = - | cut -f 2 -d '"' -`" ; local x
-        dlgfields="\"system\" \"FreeBSD-$x from system\" off"
+        listitems="\"system\" \"FreeBSD-$x from system\" off"
     fi
 
     dialog --backtitle "${xbuild_dialog_backtitle}" \
@@ -54,34 +55,34 @@ freebsd_dialog_install_sources() {
     for i in $src ; do
         case $i in
             head)
-                dlgfields="${dlgfields} \"$i\" \"FreeBSD CURRENT\" on"
+                listitems="${listitems} \"$i\" \"FreeBSD CURRENT\" on"
                 ;;
             release/*)
-                dlgfields="${dlgfields} \"$i\" \"FreeBSD-`echo $i | cut -f 2 -d /` RELEASE\" off"
+                listitems="${listitems} \"$i\" \"FreeBSD-`echo $i | cut -f 2 -d /` RELEASE\" off"
                 ;;
             stable/*)
-                dlgfields="${dlgfields} \"$i\" \"FreeBSD-`echo $i | cut -f 2 -d /` STABLE\" off"
+                listitems="${listitems} \"$i\" \"FreeBSD-`echo $i | cut -f 2 -d /` STABLE\" off"
                 ;;
             releng/*)
-                dlgfields="${dlgfields} \"$i\" \"FreeBSD-`echo $i | cut -f 2 -d / -` Release Engineering\" off"
+                listitems="${listitems} \"$i\" \"FreeBSD-`echo $i | cut -f 2 -d / -` Release Engineering\" off"
                 ;;
         esac
     done
 
-    tmpf="${xbuild_tmp_prefix}/instosdlg.tmp"; local tmpf
-    cat >> $tmpf << __EOF__
+    tmpf="${xbuild_tmp_prefix}/instfbsddlg.tmp"; local tmpf
+    cat > $tmpf << __EOF__
 __real_freebsd_sources_dialog__() {
-    src=\$(dialog --clear --stdout \\
+    xbuild_install_freebsd_sources=\$(dialog --clear --stdout \\
         --backtitle "$xbuild_dialog_backtitle" \\
         --title "FreeBSD Sources" \\
         --checklist "Please choose the FreeBSD sources to install." 19 50 12 \\
-        $dlgfields)
+        $listitems)
     return \$?
 }
 __EOF__
     . $tmpf
     #rm $tmpf
-    freebsd_src="`__real_freebsd_sources_dialog`"
+    __real_freebsd_sources_dialog__
     rv=$? ; local rv
     echo $rv
     if [ $rv -ne 0 ] ; then
@@ -107,32 +108,34 @@ __EOF__
     fi
 
     # calculate installation steps
-    for i in $freebsd_src; do
+    for i in $xbuild_install_freebsd_sources; do
         ninst=$(( ninst + 1 ))
     done
     return 0
 }
 
 freebsd_dialog_install_ports() {
+    dlg_title="FreeBSD Ports Collection"; local dlg_title
+    dlg_msg="Please choose where to install FreeBSD Ports from."
     if [ "`freebsd_have_system_ports`" == "yes" ] ; then
-        sysports_tag="system"; local sysports_tag
-        sysports_info="Ports from system (/usr/ports)"; local sysports_info
-        sysports_status="off"
+        xbuild_freebsd_install_ports=$(dialog --stdout \
+            --backtitle "$xbuild_dialog_backtitle" \
+            --title  "$dlg_title" --radiolist "$dlg_msg" 12 50 4 \
+                "no" "Don't install" off \
+                "system" "Ports From System" off \
+                "portsnap" "Install with portsnap" on \
+                "svn" "Install from svn repository" off)
+        rv=$?; local rv
     else
-        sysports_tag=""
-        sysports_info=""
-        sysports_status=""
+        xbuild_freebsd_install_ports=$(dialog --stdout \
+            --backtitle "$xbuild_dialog_backtitle" \
+            --title  "$dlg_title" --radiolist "$dlg_msg" 11 50 3 \
+                "no" "Don't install" off \
+                "portsnap" "Install with portsnap" on \
+                "svn" "Install from svn repository" off)
+        rv=$?; local rv
     fi
-    local sysports_tag sysports_info sysports_status
-
-    freebsd_ports=$(dialog --stdout --backtitle "$xbuild_dialog_backtitle" \
-        --title "FreeBSD Ports Collection" \
-        --radiolist "Please choose where to install FreeBSD Ports from." 15 50 4 \
-            "no" "Don't install" off \
-            "$sysports_tag" "$sysports_info" $sysports_status \
-            "portsnap" "Install with portsnap" on \
-            "svn" "Install from svn repository" off)
-    if [ $? -ne 0 ] ; then
+    if [ $rv -ne 0 ] ; then
         dialog --backtitle "$xbuild_dialog_backtitle" \
             --title "Installing ports aborted" \
             --extra-button --extra-label "Ports" \
@@ -148,9 +151,7 @@ freebsd_dialog_install_ports() {
                 exit;;
         esac
     fi
-    if [ "$freebsd_ports" == "no" ] ; then
-        install_freebsd_ports="no"
-    else
+    if [ "$xbuild_freebsd_install_ports" == "yes" ] ; then
         ninst=$(( $ninst + 1 ))
         install_freebsd_ports="yes"
         freebsd_ports="$ports"
@@ -159,31 +160,31 @@ freebsd_dialog_install_ports() {
 }
 
 freebsd_dialog_install_doc() {
+    dlg_title="FreeBSD Documentation"; local dlg_title
+    dlg_msg="Please choose your doc install source."; local dlg_msg
+
     if [ "`freebsd_have_system_doc`" == "yes" ] ; then
-        sysdoc_tag="system"
-        sysdoc_info="FreeBSD docs from system"
-        sysdoc_status="off"
+        xbuild_freebsd_install_doc=$(dialog --stdout \
+            --backtitle "$xbuild_dialog_backtitle" \
+            --title "$dlg_title" --radiolist "$dlg_msg" 10 50 3 \
+                "no" "Don't install docs" on \
+                "svn" "Install docs from svn-repository." off \
+                "system" "Install docs from system" off)
+        rv=$?; local rv
     else
-        sysdoc_tag=""
-        sysdoc_info=""
-        sysdoc_status=""
+        xbuild_freebsd_install_doc=$(dialog --stdout \
+            --backtitle "$xbuild_dialog_backtitle" \
+            --title "$dlg_title" --radiolist "$dlg_msg" 9 50 2 \
+                "no" "Don't install docs" on \
+                "svn" "Install docs from svn-repository." off)
+        rv=$?; local rv
     fi
-    local sysdoc_tag sysdoc_info sysdoc_status
-
-    echo "<< BEGIN DOCS >>"
-
-    freebsd_docs=$(dialog --stdout --backtitle "$xbuild_dialog_backtitle" \
-        --title "FreeBSD Documentation" \
-        --radiolist "Please choose your doc install source." 12 50 3 \
-            "no" "Don't install docs" on \
-            "svn" "Install docs from svn-repository." off \
-            "$sysdoc_tag" "$sysdoc_info" "$sysdoc_status")
-    if [ $? -ne 0 ] ; then
+    if [ $rv -ne 0 ] ; then
         dialog --backtitle "$xbuild_dialog_backtitle" \
             --extra-button --extra-label "Docs" \
             --ok-label "Restart" --cancel-label "Exit" \
             --title "Install doc aborted" \
-            --yesno "Installation of FreeBSD documentation aborted!\nDo you want to <Restart> the installer, rerun the <Docs> dialog or <Exit> the installer?" 12 50
+            --yesno "Installation of FreeBSD documentation aborted!\nDo you want to <Restart> the installer, rerun the <Docs> dialog or <Exit> the installer?" 9 50
 
         case $rv in
             0)
@@ -194,15 +195,16 @@ freebsd_dialog_install_doc() {
                 return 1 ;;
         esac
     fi
-    if [ "$freebsd_docs" == "no" ] ; then
-        install_freebsd_docs="no"
-    else
+    if [ "$xbuild_freebsd_install_doc" == "yes" ] ; then
         ninst=$(( $ninst + 1 ))
-        install_freebsd_docs="yes"
+        install_freebsd_doc="yes"
     fi
 }
 
 freebsd_dialog_install() {
+    : ${FREEBSD_RELENG_ENABLE:="no"}
+    : ${freebsd_releng_enable:=$FREEBSD_RELENG_ENABLE}
+
     rv=1; local rv
     while [ $rv -eq 1 ] ; do
         freebsd_dialog_install_sources

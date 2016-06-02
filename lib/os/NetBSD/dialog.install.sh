@@ -33,6 +33,9 @@
 #
 # Changelog:
 
+netbsd_dialog_install_sources() {
+
+}
 
 netbsd_dialog_install() {
     rv=1; local rv
