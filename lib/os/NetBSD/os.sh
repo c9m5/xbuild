@@ -65,7 +65,6 @@ netbsd_have_system_doc() {
     fi
 }
 
-
 netbsd_have_system_pkgsrc() {
     if ([ "`netbsd_is_host`" == "yes" ] && [ -r "/usr/pkgsrc/Makefile" ]) ; then
         echo "yes"
@@ -85,7 +84,7 @@ __EOF__
     netbsd_sources=""; local items
     for i in `cat $tmpfile | grep "NetBSD-" | cut -f 9 -w -`; do
         case $i in
-            NetBSD-archive|NetBSD-daily)
+            NetBSD-archive|NetBSD-daily|NetBSD-current)
                 ;;
             *)
                 netbsd_sources="${netbsd_sources} $i"

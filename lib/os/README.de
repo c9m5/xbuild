@@ -1,0 +1,22 @@
+# -*- utf-8 -*-
+
+Unterverzeichnis für OS-spezifische Dateien. Sollte in $PREFIX/lib/xbuild/os
+installiert sein.
+
+Variablen werden mit "-" gekenntzeichnet, Funktionen mit "+".
+Dateien:
+    * $OS/os.conf       Konfigurationsdatei für $OS.
+                        Setzt folgende Variablen:
+        - XBUILD_OS_NAME        Name des Betriebsystems.
+        - XBUILD_OS_TAG:        Tags für Funktionen.
+        - XBUILD_OS_VARPREFIX   Prefix für Variablen.
+    * $OS/os.sh     $OS spezifische Funtionen. Funktionen sollten als
+                    ${XBUILD_OS_TAG}_${FUNCNAME} deklariert werden.
+        + ${TAG}_is_host        Das Betriebssystem ist auch der Host,
+                                auf dem gebaut wird.
+    * $OS/install.sh    Installationsscript für das Betriebssystem.
+        + ${TAG}_install
+    * $OS/dialog.isntall.sh Dialoge für installation.
+        + ${TAG}_dialog_install Führt die dialogbasierte Installation aus.
+
+

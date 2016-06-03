@@ -42,21 +42,61 @@ netbsd_dialog_install_sources() {
     listitems=""; local listitems
 
     if [ "`netbsd_have_system_sources`" == "yes" ] ; then
+        listitens="\"system\" \"System Sources\" on"
     fi
 
     for i in $netbsd_sources; do
-        listitems="${listitems} \"$i\" off"
+        case $i in
+            *-release-*)
+                listitems="${listitems} \"release-`echo "$i" | cut -f 3 -d '-' -`\" \"$i\" off"
+                ;;
+            *)
+                listitems="${listitems} \"`echo "$i" | cut -f 2 -d '-' -`\" \"$i\" off"
+                ;;
+        esac
     done
 
     xbuild_install_netbsd_sources="$(dialog --stdout \
         --backtitle "$xbuild_dialog_backtitle" \
         --title "NetBSD Sources" \
-        --no-items \
         --checklist "Please choose NetBSD sources to install." 18 40 12 \
             ${listitems})"
-    if ([ $? -ne 0 ]); then
-    if
-    if ([  -z "$xbuild_netbsd_install_sources" ]);
+    rv=$?; local rv
+    if ([ $rv -ne 0 ] || [ -z "$xbuild_netbsd_install_sources" ]) ; then
+        if [ $rv -ne 0 ] ; then
+            msg="Installation of NetBSD sources was cnaceled.\n\n"
+        else
+            msg="No sources to install selected.\n\n"
+        fi
+        dialog --backtitle "$xbuild_dialog_backtitle" \
+            --title "NetBSD Sources Canceled" \
+            --extra-button --extra-label "Sources" \
+            --ok-label "Restart" --cancel-label "Exit" \
+            --yesno "${msg}Do you want to <Restart> the installer, reslect <Sources>, or <Exit> the installer?" 6 50
+        rv=$?
+        case $rv in
+            1)
+                exit ;;
+            3)
+                return 1 ;;
+            0|*)
+                return 2 ;;
+        esac
+    fi
+}
+
+netbsd_dialog_install_pkgsrc() {
+    dialog --backtitle "$xbuild_dialog_backtitle" \
+        --title "NetBSD pkgsrc" \
+        --yesno "Do you want to install pkgsrc?"
+    case $? in
+        0)
+            xbuild_netbsd_install_pkgsrc="yes"
+            ;;
+        *)
+            xbuild_netbsd_install_pkgsrc="no"
+            ;;
+    esac
 }
 
 netbsd_dialog_install() {
@@ -65,8 +105,16 @@ netbsd_dialog_install() {
         netbsd_dialog_install_sources
         rv=$?
     done
+    if [ $rv -ne 0 ] ; then
+        return 1
+    fi
 
-    #dialog_install_netbsd_pkgsrc
-    #dialog_install_netbsd_docs
+    rv=1; local rv
+    while [ $rv -eq 1 ] ; do
+        netbsd_dialog_install_pkgsrc
+    done
+    if [ $rv -ne 0 ] ; then
+        return 1
+    fi
 }
 
