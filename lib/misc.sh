@@ -67,11 +67,11 @@ error() {
 }
 
 dialog_max_width() {
-    echo "`dialog --print-maxsize | cut -f 3 -w -`"
+    echo "`dialog --stdout --print-maxsize | cut -f 3 -w -`"
 }
 
 dialog_max_height() {
-    echo "`dialog --print-maxsize | cut -f 2 -w - | cut -f 1 -d , -`"
+    echo "`dialog --stdout --print-maxsize | cut -f 2 -w - | cut -f 1 -d ',' -`"
 }
 
 os_get_tags() {

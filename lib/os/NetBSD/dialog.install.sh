@@ -34,14 +34,36 @@
 # Changelog:
 
 netbsd_dialog_install_sources() {
+    clear
+    netbsd_lookup_sources
 
+    tmpfile="${xbuild_tmp_dir}/netbsdsrcinstdlg.tmp"; local tmpfile
+
+    listitems=""; local listitems
+
+    if [ "`netbsd_have_system_sources`" == "yes" ] ; then
+    fi
+
+    for i in $netbsd_sources; do
+        listitems="${listitems} \"$i\" off"
+    done
+
+    xbuild_install_netbsd_sources="$(dialog --stdout \
+        --backtitle "$xbuild_dialog_backtitle" \
+        --title "NetBSD Sources" \
+        --no-items \
+        --checklist "Please choose NetBSD sources to install." 18 40 12 \
+            ${listitems})"
+    if ([ $? -ne 0 ]); then
+    if
+    if ([  -z "$xbuild_netbsd_install_sources" ]);
 }
 
 netbsd_dialog_install() {
     rv=1; local rv
     while [ $rv -eq 1 ] ; do
         netbsd_dialog_install_sources
-        rv=$1
+        rv=$?
     done
 
     #dialog_install_netbsd_pkgsrc

@@ -36,7 +36,7 @@
 xbuild_install_restart="yes"
 
 dialog_install_os() {
-    tmpf="${xbuild_tmp_prefix}/osinstdlg.tmp"; local tmpf
+    tmpf="${xbuild_tmp_dir}/osinstdlg.tmp"; local tmpf
     trap "rm -f $tmpf"
 
     listitems=""; local listitems

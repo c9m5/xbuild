@@ -41,22 +41,59 @@ netbsd_is_host() {
     fi
 }
 
+netbsd_have_system_sources() {
+    if ([ "`netbsd_is_host`" == "yes" ] && [ -r "/usr/src/Makefile" ]) ; then
+        echo "yes"
+    else
+        echo "no"
+    fi
+}
+
+#netbsd_have_system_x11_sources() {
+#    if ([ "`netbsd_is_host`" == "yes" ] && [ -r "/usr/X11/Makefile" ]) ; then
+#        echo "yes"
+#    else
+#        echo "no"
+#    fi
+#}
+
+netbsd_have_system_doc() {
+    if ([ "`netbsd_is_host`" == "yes" ] && [ -r "/usr/doc/Makefile" ]) ; then
+        echo "yes"
+    else
+        echo "no"
+    fi
+}
+
+
+netbsd_have_system_pkgsrc() {
+    if ([ "`netbsd_is_host`" == "yes" ] && [ -r "/usr/pkgsrc/Makefile" ]) ; then
+        echo "yes"
+    else
+        echo "no"
+    fi
+}
+
 netbsd_lookup_sources() {
-    tmpf="${xbuild_tmp_prefix}/netbsd.dir"
-    ftp -n "${ntbsd_ftp_root}/" 2&>1 << __EOF__
-dir . "$tmpf"
+    tmpfile="${xbuild_tmp_dir}/netbsd.dir"; local tmpfile
+
+    ftp -n "${netbsd_ftp_root}/" << __EOF__
+dir . $tmpfile
+bye
 __EOF__
 
-    items=""; local items
-    for i in `cat $tmpf | grep "NetBSD-" | -cut -f 9 -w -`; do
+    netbsd_sources=""; local items
+    for i in `cat $tmpfile | grep "NetBSD-" | cut -f 9 -w -`; do
         case $i in
             NetBSD-archive|NetBSD-daily)
                 ;;
             *)
-                items="${items} $i"
+                netbsd_sources="${netbsd_sources} $i"
                 ;;
+        esac
     done
-    echo $items
+    clear
+    rm $tmpfile
 }
 
 

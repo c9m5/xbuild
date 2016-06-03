@@ -43,23 +43,23 @@ xbuild_bindir="${xbuild_prefix}/bin"
 xbuild_libdir="${xbuild_prefix}/lib/xbuild"
 xbuild_datadir="${xbuild_prefix}/share/xbuild"
 
-#xbuild_tmp_prefix=$(mktemp -d -u /tmp/xbuild.${LOGNAME:=$USER}.XXXX)
-xbuild_tmp_prefix="/tmp/xbuild"
-#trap "rm -rf ${xbuild_tmp_prefix}" EXIT
-if [ ! -d "$xbuild_tmp_prefix" ] ; then
-    mkdir -p "$xbuild_tmp_prefix"
+#xbuild_tmp_dir=$(mktemp -d -u /tmp/xbuild.${LOGNAME:=$USER}.XXXX)
+xbuild_tmp_dir="/tmp/xbuild"
+#trap "rm -rf ${xbuild_tmp_dir}" EXIT
+if [ ! -d "$xbuild_tmp_dir" ] ; then
+    mkdir -p "$xbuild_tmp_dir"
 fi
 
 for i in ${xbuild_libdir}/os/* ; do
     if ([ -d "$i" ] && [ -r ${i}/os.conf ]) ; then
         os_tag="`cat "${i}/os.conf" | grep "XBUILD_OS_TAG=" | cut -f 2 -d '"' -`"
         os_name="`cat "${i}/os.conf" | grep "XBUILD_OS_NAME=" | cut -f 2 -d '"' -`"
-        echo -n "${os_tag}:${os_name}:${i};" >> $xbuild_tmp_prefix/os.tmp
+        echo -n "${os_tag}:${os_name}:${i};" >> $xbuild_tmp_dir/os.tmp
     fi
 done
-XBUILD_OS_LIST="`cat $xbuild_tmp_prefix/os.tmp`"
+XBUILD_OS_LIST="`cat $xbuild_tmp_dir/os.tmp`"
 readonly XBUILD_OS_LIST
-rm $xbuild_tmp_prefix/os.tmp
+rm $xbuild_tmp_dir/os.tmp
 
 # sourcing global config files
 for i in /etc /usr/local/etc ${xbuild_prefix}/etc ${HOME}/.loacal/etc; do
@@ -89,7 +89,7 @@ config_install() {
     # default installation dir
     # might be set in $X/etc/xbuild.rc
     : ${XBUILD_DEFAULT_ROOTDIR:="${HOME}/xbuild.root"}
-    install_log="${xbuild_tmpdir}install.log"
+    install_log="${xbuild_tmp_dir}/install.log"
 
     for i in `os_get_tags` ; do
         libdir="`os_get_libdir_from_tag $i`"; local libdir

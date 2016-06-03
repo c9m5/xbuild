@@ -69,7 +69,7 @@ freebsd_dialog_install_sources() {
         esac
     done
 
-    tmpf="${xbuild_tmp_prefix}/instfbsddlg.tmp"; local tmpf
+    tmpf="${xbuild_tmp_dir}/instfbsddlg.tmp"; local tmpf
     cat > $tmpf << __EOF__
 __real_freebsd_sources_dialog__() {
     xbuild_install_freebsd_sources=\$(dialog --clear --stdout \\
