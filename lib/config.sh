@@ -88,7 +88,7 @@ xbuild_dialog_backtitle="xbuild - Cross build toolkit for embedded platforms"
 config_install() {
     # default installation dir
     # might be set in $X/etc/xbuild.rc
-    : ${XBUILD_DEFAULT_ROOTDIR:="${HOME}/xbuild.root"}
+    xbuild_install_dir=${XBUILD_DEFAULT_ROOTDIR:="${HOME}/xbuild"}
     install_log="${xbuild_tmp_dir}/install.log"
 
     for i in `os_get_tags` ; do
