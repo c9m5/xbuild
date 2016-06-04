@@ -122,4 +122,27 @@ __EOF__
     fi
 }
 
+xbuil_install_count_n_targets() {
+}
+
+xbuild_install_base() {
+    if [ ! -d "$xbuild_install_dir" ] ; then
+        echo "[DIR] $xbuild_install_dir"
+        mkdir -p "$xbuild_install_dir"
+    fi
+    for i in config xbuild; do
+        echo "[DIR] ${xbuild_install_dir}/$i"
+        mkdir -p "${xbuild_install_dir}/$i"
+
+        f="XBUILD_NO_PROJECT"
+        echo "[FILE] ${xbuild_install_dir}/${f}"
+        touch "${xbuild_install_dir}/${f}"
+    done
+
+    basedir="${xbuild_install_dir}/xbuild"; local basedir
+    for i in scripts skel skel/config skel/mroot skel/mnt skel/work skel/img skel/pkg; do
+        echo "[DIR] ${basedir}/${i}"
+        mkdir -p "${basedir}/${i}"
+    done
+}
 
