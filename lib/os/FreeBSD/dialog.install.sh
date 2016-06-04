@@ -109,9 +109,18 @@ __EOF__
 
     # calculate installation steps
     for i in $xbuild_install_freebsd_sources; do
-        ninst=$(( ninst + 1 ))
+        case $i in
+            head)
+                install_add_target freebsd_install_sources "FreeBSD-Current" "$i"
+                ;;
+            stable/*)
+                install_add_target freebsd_install_sources "FreeBSD-`echo "$i" | cut -f 2 -d / -` STABLE" "$i"
+                ;;
+            releng/*)
+                install_add_target freebsd_install_sources "FreeBSD-`echo "$i" | cut -f 2 -d / -` RELENG" "$i"
+                ;;
+        esac
     done
-    return 0
 }
 
 freebsd_dialog_install_ports() {

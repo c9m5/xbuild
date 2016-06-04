@@ -66,7 +66,11 @@ __EOF__
 }
 
 dialog_install() {
+    xbuild_dialog_install="yes"
+
     while [ "`echo $xbuild_install_restart`" == "yes" ] ; do
+        xbuild_install_reset
+
         dialog --clear --yes-label "Continue" --no-label "Cancel" \
             --yesno "You are about to install the xbuild-environment to your homedir." 6 40
         rv=$? ; local rv
@@ -89,10 +93,12 @@ dialog_install() {
                         --yesno "Installation directory \"${instdir}\" does not exist.\nDo you want it to be created?" 10 40
                     rv=$?
                     if [ $rv -eq 0 ] ; then
-                        xbuild_install_dir=$instdir
+                        xbuild_install_dir="$instdir"
                     else
                         rv=1
                     fi
+                else
+                    xbuild_install_dir="$instdir"
                 fi
             else
                 rv=2
@@ -102,6 +108,7 @@ dialog_install() {
         if [ $rv -ne 0 ] ; then
             continue
         fi
+        install_add_target xbuild_install_base "XBuild Base"
 
         #check which OS(es) to install
         dialog_install_os

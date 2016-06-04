@@ -92,6 +92,8 @@ config_install() {
     install_log="${xbuild_tmp_dir}/install.log"
     xbuild_install_script="${xbuild_tmp_dir}/install.sh"
 
+    . "${xbuild_libdir}/install.sh"
+    . "${xbuild_libdir}/dialog.install.sh"
     for i in `os_get_tags` ; do
         libdir="`os_get_libdir_from_tag $i`"; local libdir
         . "${libdir}/os.conf"
@@ -99,7 +101,6 @@ config_install() {
         . "${libdir}/install.sh"
         . "${libdir}/dialog.install.sh"
     done
-    . "${xbuild_libdir}/dialog.install.sh"
 }
 
 

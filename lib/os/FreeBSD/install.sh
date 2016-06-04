@@ -33,3 +33,12 @@
 #
 # Changelog:
 
+freebsd_install_sources() {
+}
+
+freebsd_install_docs() {
+}
+
+freebsd_install_ports() {
+}
+

@@ -33,6 +33,10 @@
 #
 # Changelog:
 
+xbuild_install_count=0
+xbuild_install_n_targets=0
+xbuild_dialog_install="no"
+
 # Add a target for installation
 # $1        Target
 # $2        Target name. Will be displayed in installer and config log.
@@ -51,22 +55,28 @@ install_add_target() {
 
     builtin echo -n "xbuild_install_target \"$1\"" >> "$xbuild_install_script"
 
-    if ([ $# -eq 1 ] || [ -z "$2" ])
+    if ([ $# -eq 1 ] || [ -z "$2" ]); then
         builtin echo -n "\"$1\"" >> "$xbuild_install_script"
     else
-        builtin echo -n "\"$2\"" >> "$xbuild_install_script"
+        builtin echo -n " \"$2\"" >> "$xbuild_install_script"
     fi
     shift; shift
 
     while [ $# -gt 0 ] ; do
-        builtin echo -n "\"$1\"" >> "$xbuild_install_script"
+        builtin echo -n " \"$1\"" >> "$xbuild_install_script"
         shift
     done
     echo "" >> "$xbuild_install_script"
+    xbuild_install_n_targets=$(( $xbuild_install_n_targets + 1 ))
 }
 
-xbuild_install_cnt=0
-xbuild_install_n_targets=0
+xbuild_install_reset() {
+    xbuild_install_count=0
+    xbuild_install_n_targets=0
+    if [ -r "$xbuild_install_script" ] ; then
+        truncate -s 0 "$xbuild_install_script"
+    fi
+}
 
 xbuild_install_print_target() {
     i=0; local i
@@ -95,10 +105,10 @@ xbuild_install_print_target() {
 
 # WARNING: Don't call this function directly!
 xbuild_install_target() {
-    xbuild_install_cnt=$(( $xbuild_install_cnt + 1 ))
+    xbuild_install_count=$(( $xbuild_install_cnt + 1 ))
 
     target="$1"; local target
-    message="$2"; local message
+    message="Installing $2 ..."; local message
     shift; shift
 
     if [ "$xbuild_dialog_install" == "yes" ] ; then
@@ -122,9 +132,6 @@ __EOF__
     fi
 }
 
-xbuil_install_count_n_targets() {
-}
-
 xbuild_install_base() {
     if [ ! -d "$xbuild_install_dir" ] ; then
         echo "[DIR] $xbuild_install_dir"
@@ -144,5 +151,8 @@ xbuild_install_base() {
         echo "[DIR] ${basedir}/${i}"
         mkdir -p "${basedir}/${i}"
     done
+}
+
+xbuild_install_config_files() {
 }
 
