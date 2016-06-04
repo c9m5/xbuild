@@ -90,6 +90,7 @@ config_install() {
     # might be set in $X/etc/xbuild.rc
     xbuild_install_dir=${XBUILD_DEFAULT_ROOTDIR:="${HOME}/xbuild"}
     install_log="${xbuild_tmp_dir}/install.log"
+    xbuild_install_script="${xbuild_tmp_dir}/install.sh"
 
     for i in `os_get_tags` ; do
         libdir="`os_get_libdir_from_tag $i`"; local libdir
