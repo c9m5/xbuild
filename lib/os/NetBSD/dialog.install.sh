@@ -111,38 +111,38 @@ netbsd_dialog_install_pkgsrc() {
     fi
 }
 
-netbsd_dialog_install_doc() {
-    netbsd_doc=$(dialog --stdout --backtitle "$xbuild_dialog_backtitle" \
-        --title "NetBSD documentation" \
-        --checklist "Please select the NetBSD Documentation you want to install." 15 50 4 \
-            "html" "HTML documentation" off \
-            "html1" "Single html file" off \
-            "pdf"   "Documentation in PDF-format." off \
-            "ps"    "Documentation in postscript format" off)
-    rv=$?; local rv
-    if [ $rv -ne 0 ] ; then
-        dialog --backtitle "$xbuild_dialog_backtitle" \
-            --title "NetBSD Documentation Installer aborted!" \
-            --extra-button --extra-label "Documentation" \
-            --ok-label "Restart" --cancel-label "Exit" \
-            --yesno "Installation of NetBSD documenation was canceled!\n\nDo you want to <Restart> the installer, rerun the <Documentation> dialog or <Exit> the installer?" 10 50
-
-        case $? in
-            1)
-                exit ;;
-            3)
-                return 1 ;;
-            0|*)
-                return 2 ;;
-        esac
-    fi
-
-    if [ ! -z "$netbsd_doc" ] ; then
-        for i in $netbsd_doc; do
-            install_add_target netbsd_install_doc "NetBSD Documentation" "$i"
-        done
-    fi
-}
+#netbsd_dialog_install_doc() {
+#    netbsd_doc=$(dialog --stdout --backtitle "$xbuild_dialog_backtitle" \
+#        --title "NetBSD documentation" \
+#        --checklist "Please select the NetBSD Documentation you want to install." 15 50 4 \
+#            "html" "HTML documentation" off \
+#            "html1" "Single html file" off \
+#            "pdf"   "Documentation in PDF-format." off \
+#            "ps"    "Documentation in postscript format" off)
+#    rv=$?; local rv
+#    if [ $rv -ne 0 ] ; then
+#        dialog --backtitle "$xbuild_dialog_backtitle" \
+#            --title "NetBSD Documentation Installer aborted!" \
+#            --extra-button --extra-label "Documentation" \
+#            --ok-label "Restart" --cancel-label "Exit" \
+#            --yesno "Installation of NetBSD documenation was canceled!\n\nDo you want to <Restart> the installer, rerun the <Documentation> dialog or <Exit> the installer?" 10 50
+#
+#        case $? in
+#            1)
+#                exit ;;
+#            3)
+#                return 1 ;;
+#            0|*)
+#                return 2 ;;
+#        esac
+#    fi
+#
+#    if [ ! -z "$netbsd_doc" ] ; then
+#        for i in $netbsd_doc; do
+#            install_add_target netbsd_install_doc "NetBSD Documentation" "$i"
+#        done
+#    fi
+#}
 
 netbsd_dialog_install() {
     rv=1; local rv
@@ -163,13 +163,13 @@ netbsd_dialog_install() {
         return 1
     fi
 
-    rv=1
-    while [ $rv -eq 1 ] ; do
-        netbsd_dialog_install_doc
-        rv=$?
-    done
-    if [ $rv -ne 0 ] ; then
-        return 1
-    fi
+    #rv=1
+    #while [ $rv -eq 1 ] ; do
+    #    netbsd_dialog_install_doc
+    #    rv=$?
+    #done
+    #if [ $rv -ne 0 ] ; then
+    #    return 1
+    #fi
 }
 

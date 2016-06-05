@@ -33,27 +33,60 @@
 #
 # Changelog:
 
+netbsd_install_base() {
+    if [ ! -d "${netbsd_base_dir}" ] ; then
+        echo "[DIR] ${netbsd_base_dir}"
+        mkdir -p "${xbuild_base_dir}/NetBSD"
+    fi
+}
+
 netbsd_install_sources() {
+    : ${ftp_retries:=10}
+
     src="NetBSD-$1"; local src
-    downdir="${HOME}/Downloads/xbuild/NetBSD-$1"; local downdir
+    downdir="xbuild_temp_dir/downloads/NetBSD-$1"; local downdir
     pwd_save="$(pwd)"; local pwd_save
 
     if [ ! -d "$downdir" ] ; then
         mkdir -p "$downdir"
     fi
 
+    echo "[DIR] ${netbsd_base_dir}/${src}"
+
+    mkdir -p
     case $target in
         *-release-*)
             targz="bin common compat compat config crypto dist distrib doc etc external extsrc games gnu include lib libexec regress rescue sbin share sys tests tools top-level usr.bin usr.sbin x11"; local targz
 
             for i in $targz; do
                 tarball="${i}.tar.gz"; local tarball
+                file_ok="no"; local file_ok
+                retr=0; local retr
                 echo "Downloading ${src} \"${tarball}\""
-                ftp -inV "${netbsd_ftp_root}/${target}/${tar_files}/" << __EOF__
+
+                while ([ "$file_ok" == "no" ] && [ $retr -le $ftp_retries ]); do
+                    retr=$(( $retr + 1 ))
+                    ftp -inV "${netbsd_ftp_root}/${target}/tar_files/src/" << __EOF__
 lcd ${downdir}
+get ${tarball}.MD5
+get ${tarball}.SHA1
 get ${tarball}
 bye
 __EOF__
+                    # checksum tarballs
+                    if ([ "`md5 "${downdir}/${tarball}" | cut -f 2 -d = -`" == "`cat "${downdir}/${tarball}.MD5" | cut -f 2 -d = -`" ] \
+                            && [ "`sha1 "${downdir}/${tarball}" | cut -f 2 -d = -`" =0 "`cat "${downdir}/${tarball}.SHA1" | cut -f 2 -d = -`" ]) ; then
+                        echo "Checksum of \"${tarball}\" OK"
+                        file_ok="yes"
+                    fi
+                done
+                if [ file_ok="yes" ] ; then
+                    # extract files to temp dir and move them to dest
+                    tar -xzvC "${netbsd_base_dir}/${src}" -f "${downdir}/${tarball}"
+                else
+                    error "Unable to download tarballs for \"${src}\"!"
+                    return 1
+                done
             done
             ;;
         *)
@@ -67,14 +100,12 @@ lcd ${downdir}
 get ${tarball}
 bye
 __EOF__
+
             done
             ;;
     esac
 }
 
 netbsd_install_pkgsrc() {
-}
-
-netbsd_install_doc() {
 }
 
