@@ -50,6 +50,8 @@ if [ ! -d "$xbuild_tmp_dir" ] ; then
     mkdir -p "$xbuild_tmp_dir"
 fi
 
+. ${xbuild_libdir}/misc.sh
+
 for i in ${xbuild_libdir}/os/* ; do
     if ([ -d "$i" ] && [ -r ${i}/os.conf ]) ; then
         os_tag="`cat "${i}/os.conf" | grep "XBUILD_OS_TAG=" | cut -f 2 -d '"' -`"
@@ -75,12 +77,35 @@ else
     xbuild_is_installed="no"
 fi
 
+### checking for some required programs ###
+# sudo
+if [ -z `command -v sudo` ] ; then
+    error "\"sudo\" not found on your system!"
+    error "Please install sudo!"
+    exit 2
+fi
 
+# SVN/SVNlite
+: XBUILD_SVN="${XBUILD_SVN:=`command -v svnlite`"}
+: XBUILD_SVN="${XBUILD_SVN:=`command -v svn`"}
+if [ -z "$XBUILD_SVN" ] ; then
+    error "Neither \"svnlite\" nor \"svn\" have been found on your system!"
+    error "Please install atleast one of them!"
+    exit 2
+fi
+
+# CVS
+: XBUILD_CVS="${XBUILD_CVS:=`command -v cvs`"}
+if [ -z "XBUILD_CVS" ] ; then
+    error "\"CVS\" is required for NetBSD!"
+    error "Please install netbsd!"
+    exit 2
+fi
+### done checking programs ###
 
 # check for host system
 xbuild_host="`uname -o`"
 
-. ${xbuild_libdir}/misc.sh
 xbuild_dialog_backtitle="xbuild - Cross build toolkit for embedded platforms"
 
 

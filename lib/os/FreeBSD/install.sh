@@ -44,10 +44,10 @@ freebsd_install_sources() {
     : ${xbuild_svn_retries:=10}
     case $1 in
         */*)
-            srcinstdir="${xbuild_base_dir}/freebsd/src.`echo "$i" | cut -f 1 -d / -`-`echo "$i" | cut -f 2 -d / -`"
+            srcinstdir="${xbuild_base_dir}/FreeBSD/src.`echo "$i" | cut -f 1 -d / -`-`echo "$i" | cut -f 2 -d / -`"
             ;;
         *)
-            srcinstdir="${xbuild_base_dir}/freebsd/src.$i"
+            srcinstdir="${xbuild_base_dir}/FreeBSD/src.$i"
             ;;
     esac
     local srcinstdir
@@ -94,6 +94,20 @@ __EOF__
 }
 
 freebsd_install_ports() {
+    basedir="${xbuild_base_dir}/FreeBSD"
+    portsdir="${basedir}/ports"
+    portsdbdir="${basedir}/db.ports"
+    distfilesdir="${basedir}/distfiles"
+    local basedir portsdir portsdbdir distfilesdir
+
+    case $1 in
+        system)
+            ;;
+        portsnap)
+            ;;
+        svn)
+            ;;
+    esac
 }
 
 freebsd_install_doc() {
