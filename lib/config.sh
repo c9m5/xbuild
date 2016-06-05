@@ -50,8 +50,6 @@ if [ ! -d "$xbuild_tmp_dir" ] ; then
     mkdir -p "$xbuild_tmp_dir"
 fi
 
-. ${xbuild_libdir}/misc.sh
-
 for i in ${xbuild_libdir}/os/* ; do
     if ([ -d "$i" ] && [ -r ${i}/os.conf ]) ; then
         os_tag="`cat "${i}/os.conf" | grep "XBUILD_OS_TAG=" | cut -f 2 -d '"' -`"
@@ -76,6 +74,8 @@ if [ -r "${HOME}/.xbuildrc" ] ; then
 else
     xbuild_is_installed="no"
 fi
+
+. ${xbuild_libdir}/misc.sh
 
 ### checking for some required programs ###
 # sudo
@@ -110,12 +110,14 @@ xbuild_dialog_backtitle="xbuild - Cross build toolkit for embedded platforms"
 
 
 # configure for installer
-config_install() {
+xbuild_config_install() {
     # default installation dir
     # might be set in $X/etc/xbuild.rc
     xbuild_install_dir=${XBUILD_DEFAULT_ROOTDIR:="${HOME}/xbuild"}
     : ${xbuild_base_dir:="${xbuild_install_dir}/xbuild"}
-    : ${xbuild_config_dir:="${xbuild_install_dir}/xbuild/config"}
+    : ${xbuild_config_dir:="${xbuild_install_dir}/config"}
+    : ${xbuild_script_dir:="${xbuild_base_dir}/scripts"}
+    : ${xbuild_skel_dir:="${xbuild_base_dir}/skel"}
 
     install_log="${xbuild_tmp_dir}/install.log"
     xbuild_install_script="${xbuild_tmp_dir}/install.sh"

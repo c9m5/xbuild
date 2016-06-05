@@ -140,18 +140,17 @@ xbuild_install_base() {
         echo "[DIR] $xbuild_install_dir"
         mkdir -p "$xbuild_install_dir"
     fi
-    for i in config xbuild; do
-        echo "[DIR] ${xbuild_install_dir}/$i"
-        mkdir -p "${xbuild_install_dir}/$i"
+    for i in "$xbuild_config_dir" "$xbuild_base_dir"; do
+        echo "[DIR] $i"
+        mkdir -p "$i"
 
         f="XBUILD_NO_PROJECT"
         echo "[FILE] ${xbuild_install_dir}/${f}"
         touch "${xbuild_install_dir}/${f}"
     done
 
-    basedir="${xbuild_install_dir}/xbuild"; local basedir
     for i in scripts skel skel/config skel/mroot skel/mnt skel/work skel/img skel/pkg; do
-        echo "[DIR] ${basedir}/${i}"
+        echo "[DIR] ${xbuild_basedir}/${i}"
         mkdir -p "${basedir}/${i}"
     done
 
