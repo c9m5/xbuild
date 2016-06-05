@@ -34,6 +34,42 @@
 # Changelog:
 
 netbsd_install_sources() {
+    src="NetBSD-$1"; local src
+    downdir="${HOME}/Downloads/xbuild/NetBSD-$1"; local downdir
+    pwd_save="$(pwd)"; local pwd_save
+
+    if [ ! -d "$downdir" ] ; then
+        mkdir -p "$downdir"
+    fi
+
+    case $target in
+        *-release-*)
+            targz="bin common compat compat config crypto dist distrib doc etc external extsrc games gnu include lib libexec regress rescue sbin share sys tests tools top-level usr.bin usr.sbin x11"; local targz
+
+            for i in $targz; do
+                tarball="${i}.tar.gz"; local tarball
+                echo "Downloading ${src} \"${tarball}\""
+                ftp -inV "${netbsd_ftp_root}/${target}/${tar_files}/" << __EOF__
+lcd ${downdir}
+get ${tarball}
+bye
+__EOF__
+            done
+            ;;
+        *)
+            targz="gnusrc sharesrc src syssrc xsrc"; local targz
+
+            for i in targz; do
+                tarball="${i}.tar.gz"; local tarball
+                echo "Downloading ${src} \"${tarball}\"."
+                ftp -inV "${netbsd_ftp_root}/${target}/source/sets/" << __EOF__
+lcd ${downdir}
+get ${tarball}
+bye
+__EOF__
+            done
+            ;;
+    esac
 }
 
 netbsd_install_pkgsrc() {
