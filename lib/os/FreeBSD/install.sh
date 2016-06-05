@@ -33,12 +33,71 @@
 #
 # Changelog:
 
-freebsd_install_sources() {
+freebsd_install_base() {
+    if [ ! -d "${xbuild_install_dir}/freebsd" ] ; then
+        echo "[DIR] ${xbuild_install_dir}/freebsd"
+        mkdir -p "${xbuild_install_dir}/freebsd"
+    fi
 }
 
-freebsd_install_docs() {
+freebsd_install_sources() {
+    : ${xbuild_svn_retries:=10}
+    case $1 in
+        */*)
+            srcinstdir="${xbuild_base_dir}/freebsd/src.`echo "$i" | cut -f 1 -d / -`-`echo "$i" | cut -f 2 -d / -`"
+            ;;
+        *)
+            srcinstdir="${xbuild_base_dir}/freebsd/src.$i"
+            ;;
+    esac
+    local srcinstdir
+
+    if [ ! -d "$scrinstdir" ] ; then
+        echo "[DIR] $srcinstdir"
+        mkdir -p "$srcinstdir"
+    fi
+
+    if [ "$1" == "system" ] ; then
+        case $2 in
+            symlink)
+                if [ -d "${srcinstdir}" ] ; then
+                    echo "[RMDIR] $srcinstdir"
+                    rmdir "${srcinstdir}"
+                fi
+
+                echo "[SYMLINK] /usr/src -> $scrinstdir"
+                ln -s "/usr/src" "$srcinstdir"
+                ;;
+
+            nullfs)
+                echo "[FILE] /etc/fstab"
+                sudo_get_password | sudo -s sh -s << __EOF__
+echo /usr/src/ ${srcinstdir} nullfs ro,late 0 0
+__EOF__
+                ;;
+        esac
+    else
+        rv=1; local rv
+        retr=0; local retr
+
+        while ([ $rv -ne 0 ] && [ $retr -le $xbuild_svn_retries ]); do
+            svnlite checkout "${freebsd_svn_base}/$1" "$srcinstdir"
+            rv=$?
+            if [ $rv -ne 0 ] ; then
+                svnlite cleanup "$srcinstdir"
+                retr=$(( retr + 1 ))
+                echo "RETRY  $retr ..."
+                sleep 10
+            fi
+        done
+    fi
 }
 
 freebsd_install_ports() {
 }
+
+freebsd_install_doc() {
+}
+
+
 

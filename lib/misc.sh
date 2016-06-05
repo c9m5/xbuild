@@ -179,3 +179,35 @@ os_get_libdir_from_name() {
     done
 }
 
+sudo_get_password() {
+    : ${__sudo_passwd_set__:="no"}
+
+    if [ "$__sudo_passwd_set__" == "no" ] ; then
+        retries=0; local retries
+        while ([ "$__sudo_passwd_set__" != "yes" ] && [ $retries -lt 3 ]); do
+            retries=$(( $retries + 1 ))
+            __sudo_passwd__=$(dialog --stdout --insecure \
+                --backtitle "$xbuild_dialog_backtitle" \
+                --title "SUDO Password" \
+                --passwordbox "Please enter your password." 8 50 "")
+            rv=$?
+
+            if [ $rv -eq 0 ] ; then
+                ret=$(echo __sudo_passwd__ | sudo -s sh -s << __EOF__
+echo "yes"
+__EOF__
+)
+                if [ "$ret" == "yes" ] ; then
+                    __sudo_passwd_set__="yes"
+                fi
+            fi
+        done
+    fi
+
+    if [ "$__sudo_passwd_set__" != "yes" ] ; then
+        return 1
+    fi
+
+    echo "$__sudo_passwd__"
+}
+

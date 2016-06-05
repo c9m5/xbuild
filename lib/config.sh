@@ -33,7 +33,7 @@
 #
 # Changelog:
 
-VERSION=0.0.1
+VERSION=0.0.2
 
 if [ ! "$xbuild_prefix" ] ; then
     echo "[ERROR] xbuild_prefix needs to be set by the calling shellscript!"
@@ -89,17 +89,20 @@ config_install() {
     # default installation dir
     # might be set in $X/etc/xbuild.rc
     xbuild_install_dir=${XBUILD_DEFAULT_ROOTDIR:="${HOME}/xbuild"}
+    : ${xbuild_base_dir:="${xbuild_install_dir}/xbuild"}
+    : ${xbuild_config_dir:="${xbuild_install_dir}/xbuild/config"}
+
     install_log="${xbuild_tmp_dir}/install.log"
     xbuild_install_script="${xbuild_tmp_dir}/install.sh"
 
     . "${xbuild_libdir}/install.sh"
     . "${xbuild_libdir}/dialog.install.sh"
     for i in `os_get_tags` ; do
-        libdir="`os_get_libdir_from_tag $i`"; local libdir
-        . "${libdir}/os.conf"
-        . "${libdir}/os.sh"
-        . "${libdir}/install.sh"
-        . "${libdir}/dialog.install.sh"
+        local os_libdir="`os_get_libdir_from_tag $i`"
+        . "${os_libdir}/os.conf"
+        . "${os_libdir}/os.sh"
+        . "${os_libdir}/install.sh"
+        . "${os_libdir}/dialog.install.sh"
     done
 }
 

@@ -45,7 +45,7 @@ freebsd_dialog_install_sources() {
         --title "FreeBSD Sources" \
         --infobox "Looking up FreeBSD sources ..." 4 40
 
-    src="`freebsd_lookup_src`"
+    src="`freebsd_lookup_src`"; local src
     if ([ $? -ne 0 ] || [ -n "$src" ]) ; then
         dialog --backtitle "$xbuild_dialog_backtitle" \
             --title "ERRORR" \
@@ -72,7 +72,7 @@ freebsd_dialog_install_sources() {
     tmpf="${xbuild_tmp_dir}/instfbsddlg.tmp"; local tmpf
     cat > $tmpf << __EOF__
 __real_freebsd_sources_dialog__() {
-    xbuild_install_freebsd_sources=\$(dialog --clear --stdout \\
+    freebsd_sources=\$(dialog --clear --stdout \\
         --backtitle "$xbuild_dialog_backtitle" \\
         --title "FreeBSD Sources" \\
         --checklist "Please choose the FreeBSD sources to install." 19 50 12 \\
@@ -107,8 +107,19 @@ __EOF__
         esac
     fi
 
-    # calculate installation steps
-    for i in $xbuild_install_freebsd_sources; do
+    for i in $freebsd_sources; do
+        if [ "$i" == "system" ] ; then
+            syssrc=$(dialog --stdout --backtitle "$xbuild_dialog_backtitle" \
+                --title "System Sources" \
+                --radiolist "Please select the install method for \"System Sources\"." 6 50 2 \
+                    "symlink"   "Use a symlink"  on \
+                    "nullfs"    "Nullfs mount. (requires sudo!)" off)
+            : ${syssrc:="symlink"}
+            local syssrc
+        fi
+    done
+    # add sources we want to install
+    for i in $freebsd_sources; do
         case $i in
             head)
                 install_add_target freebsd_install_sources "FreeBSD-Current" "$i"
@@ -119,6 +130,13 @@ __EOF__
             releng/*)
                 install_add_target freebsd_install_sources "FreeBSD-`echo "$i" | cut -f 2 -d / -` RELENG" "$i"
                 ;;
+            system)
+                install_add_target freebsd_install_sources "FreeBSD System Sources" "$i" "$syssrc"
+                if [ "$syssrc" == "nullfs" ] ; then
+                    xbuild_install_requires_sudo="yes"
+                    xbuild_install_modifies_fstab="yes"
+                fi
+                ;;
         esac
     done
 }
@@ -127,7 +145,7 @@ freebsd_dialog_install_ports() {
     dlg_title="FreeBSD Ports Collection"; local dlg_title
     dlg_msg="Please choose where to install FreeBSD Ports from."
     if [ "`freebsd_have_system_ports`" == "yes" ] ; then
-        xbuild_freebsd_install_ports=$(dialog --stdout \
+        install_ports=$(dialog --stdout \
             --backtitle "$xbuild_dialog_backtitle" \
             --title  "$dlg_title" --radiolist "$dlg_msg" 12 50 4 \
                 "no" "Don't install" off \
@@ -136,7 +154,7 @@ freebsd_dialog_install_ports() {
                 "svn" "Install from svn repository" off)
         rv=$?; local rv
     else
-        xbuild_freebsd_install_ports=$(dialog --stdout \
+        install_ports=$(dialog --stdout \
             --backtitle "$xbuild_dialog_backtitle" \
             --title  "$dlg_title" --radiolist "$dlg_msg" 11 50 3 \
                 "no" "Don't install" off \
@@ -144,6 +162,8 @@ freebsd_dialog_install_ports() {
                 "svn" "Install from svn repository" off)
         rv=$?; local rv
     fi
+    local install_ports
+
     if [ $rv -ne 0 ] ; then
         dialog --backtitle "$xbuild_dialog_backtitle" \
             --title "Installing ports aborted" \
@@ -160,12 +180,30 @@ freebsd_dialog_install_ports() {
                 exit;;
         esac
     fi
-    if [ "$xbuild_freebsd_install_ports" == "yes" ] ; then
-        ninst=$(( $ninst + 1 ))
-        install_freebsd_ports="yes"
-        freebsd_ports="$ports"
+
+    if [ "$install_ports" == "system" ] ; then
+        sysports=$(dialog --stdout --backtitle "$xbuild_dialog_backtitle" \
+            --title "System Ports" \
+            --radiolist "System Ports installation" 6 50 2 \
+                "symlink"   "Use a symlink." \
+                "nullfs"    "Use a nullfs mount.")
+
+        : ${sysports:="symlink"}
+        local sysports
+
+        if [ "$sysports" == "nullfs" ] ; then
+            xbuild_install_requires_sudo="yes"
+            xbuild_install_modifies_fstab="yes"
+        fi
     fi
-    return 0
+
+    if ([ ! -z "$install_ports" ] && [ "$install_ports" != "no" ]) ; then
+        if [ "$install_ports" == "system" ] ; then
+            install_add_target freebsd_install_ports "FreeBSD Ports" "$install_ports" "$sysports"
+        else
+            install_add_target freebsd_install_ports "FreeBSD Ports" "$install_ports"
+        fi
+    fi
 }
 
 freebsd_dialog_install_doc() {
@@ -173,7 +211,7 @@ freebsd_dialog_install_doc() {
     dlg_msg="Please choose your doc install source."; local dlg_msg
 
     if [ "`freebsd_have_system_doc`" == "yes" ] ; then
-        xbuild_freebsd_install_doc=$(dialog --stdout \
+        install_doc=$(dialog --stdout \
             --backtitle "$xbuild_dialog_backtitle" \
             --title "$dlg_title" --radiolist "$dlg_msg" 10 50 3 \
                 "no" "Don't install docs" on \
@@ -181,18 +219,19 @@ freebsd_dialog_install_doc() {
                 "system" "Install docs from system" off)
         rv=$?; local rv
     else
-        xbuild_freebsd_install_doc=$(dialog --stdout \
+        install_doc=$(dialog --stdout \
             --backtitle "$xbuild_dialog_backtitle" \
             --title "$dlg_title" --radiolist "$dlg_msg" 9 50 2 \
                 "no" "Don't install docs" on \
                 "svn" "Install docs from svn-repository." off)
         rv=$?; local rv
     fi
+
     if [ $rv -ne 0 ] ; then
         dialog --backtitle "$xbuild_dialog_backtitle" \
             --extra-button --extra-label "Docs" \
             --ok-label "Restart" --cancel-label "Exit" \
-            --title "Install doc aborted" \
+            --title "Install doc aborted!" \
             --yesno "Installation of FreeBSD documentation aborted!\nDo you want to <Restart> the installer, rerun the <Docs> dialog or <Exit> the installer?" 9 50
 
         case $rv in
@@ -204,15 +243,17 @@ freebsd_dialog_install_doc() {
                 return 1 ;;
         esac
     fi
-    if [ "$xbuild_freebsd_install_doc" == "yes" ] ; then
-        ninst=$(( $ninst + 1 ))
-        install_freebsd_doc="yes"
+
+    if ([ ! -z "$install_doc" ] && [ "$install_doc" != "no" ]) ; then
+        install_add_target "freebsd_install_doc" "FreeBSD Documentation" "$install_doc"
     fi
 }
 
 freebsd_dialog_install() {
     : ${FREEBSD_RELENG_ENABLE:="no"}
     : ${freebsd_releng_enable:=$FREEBSD_RELENG_ENABLE}
+
+    install_add_target freebsd_install_base "FreeBSD Base Components"
 
     rv=1; local rv
     while [ $rv -eq 1 ] ; do

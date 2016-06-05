@@ -39,3 +39,6 @@ netbsd_install_sources() {
 netbsd_install_pkgsrc() {
 }
 
+netbsd_install_doc() {
+}
+

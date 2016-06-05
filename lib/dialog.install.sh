@@ -67,6 +67,7 @@ __EOF__
 
 dialog_install() {
     xbuild_dialog_install="yes"
+    xbuild_install_restart="yes"
 
     while [ "`echo $xbuild_install_restart`" == "yes" ] ; do
         xbuild_install_reset
@@ -123,9 +124,37 @@ dialog_install() {
                 break
             fi
         done
-        if [ $rv -eq 0 ] ; then
+        if [ $rv -ne 0 ] ; then
+            continue
+        fi
+
+        if ([ "$xbuild_install_modifies_fstab" == "yes" ] && [ "$xbuild_install_requires_sudo" != "yes" ]) ; then
+            xbuild_install_requires_sudo="yes"
+        fi
+
+        if [ "$xbuild_install_requires_sudo" == "yes" ] ; then
+            sudo_get_password >> /dev/null
+            if [ $? -ne 0 ] ; then
+                # TODO: write a dialog
+                dialog --backtitle "$xbuild_dialog_backtitle" \
+                    --title "ERROR PASSWORD" \
+                    --msgbox "Unable to determine sudo password!"
+                continue
+            fi
+        fi
+
+        dialog --backtitle "$xbuild_dialog_backtitle" \
+            --title "Configuration complete!" \
+            --yesno "XBuild configuration completed.\nIf you hit <Yes> the installation starts.\nIf you hit <No> you are brought back to the start dialog!\nDo you want to continue?" 12 50
+
+        if [ $? -eq 0 ] ; then
             xbuild_install_restart="no"
         fi
     done
+        install_add_target xbuild_install_config_files "Configuration Files"
+        install_add_target xbuild_postinstall "Postinstall"
+
+    # let's install everything in one go
+
 }
 

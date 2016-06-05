@@ -73,6 +73,9 @@ install_add_target() {
 xbuild_install_reset() {
     xbuild_install_count=0
     xbuild_install_n_targets=0
+    xbuild_install_requires_sudo="no"
+    xbuild_install_modifies_fstab="no"
+
     if [ -r "$xbuild_install_script" ] ; then
         truncate -s 0 "$xbuild_install_script"
     fi
@@ -151,8 +154,28 @@ xbuild_install_base() {
         echo "[DIR] ${basedir}/${i}"
         mkdir -p "${basedir}/${i}"
     done
+
+
+    if [ "$xbuild_install_modifies_fstab" == "yes" ] ; then
+        instuser=${LOGNAME:=$USER}; local instuser
+        get_sudo_password | sudo -s sh -s << __EOF__
+cp /etc/fstab /root/etc.fstab.bak
+echo "#BEGIN:xbuild:${instuser}:INSTALL" >> /etc/fstab
+__EOF__
+    fi
 }
 
 xbuild_install_config_files() {
+
 }
+
+xbuild_postinstall() {
+    if [ "$xbuild_install_modifies_fstab" == "yes" ] ; then
+        instuser=${LOGNAME:=$USER}; local instuser
+        get_sudo_password | sudo -s sh -s << __EOF__
+echo "#END:xbuild:${instuser}:INSTALL" >> /etc/fstab
+__EOF__
+    fi
+}
+
 

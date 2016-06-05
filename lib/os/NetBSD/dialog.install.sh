@@ -48,21 +48,23 @@ netbsd_dialog_install_sources() {
     for i in $netbsd_sources; do
         case $i in
             *-release-*)
-                listitems="${listitems} \"release-`echo "$i" | cut -f 3 -d '-' -`\" \"$i\" off"
+                listitems="${listitems} release-`echo "$i" | cut -f 3 -d '-' -` $i off"
                 ;;
             *)
-                listitems="${listitems} \"`echo "$i" | cut -f 2 -d '-' -`\" \"$i\" off"
+                listitems="${listitems} `echo "$i" | cut -f 2 -d '-' -` $i off"
                 ;;
         esac
     done
 
-    xbuild_install_netbsd_sources="$(dialog --stdout \
+    netbsd_sources=$(dialog --stdout \
         --backtitle "$xbuild_dialog_backtitle" \
         --title "NetBSD Sources" \
         --checklist "Please choose NetBSD sources to install." 18 40 12 \
-            ${listitems})"
-    rv=$?; local rv
-    if ([ $rv -ne 0 ] || [ -z "$xbuild_netbsd_install_sources" ]) ; then
+            ${listitems})
+    rv=$?;
+    local rv netbsd_sources
+
+    if ([ $rv -ne 0 ] || [ -z "$netbsd_sources" ]) ; then
         if [ $rv -ne 0 ] ; then
             msg="Installation of NetBSD sources was cnaceled.\n\n"
         else
@@ -72,7 +74,7 @@ netbsd_dialog_install_sources() {
             --title "NetBSD Sources Canceled" \
             --extra-button --extra-label "Sources" \
             --ok-label "Restart" --cancel-label "Exit" \
-            --yesno "${msg}Do you want to <Restart> the installer, reslect <Sources>, or <Exit> the installer?" 6 50
+            --yesno "${msg}Do you want to <Restart> the installer, reslect <Sources>, or <Exit> the installer?" 10 50
         rv=$?
         case $rv in
             1)
@@ -83,20 +85,63 @@ netbsd_dialog_install_sources() {
                 return 2 ;;
         esac
     fi
+
+    for i in $netbsd_sources; do
+        install_add_target netbsd_install_sources "NetBSD-${i} Sources" "$i"
+    done
 }
 
 netbsd_dialog_install_pkgsrc() {
     dialog --backtitle "$xbuild_dialog_backtitle" \
         --title "NetBSD pkgsrc" \
-        --yesno "Do you want to install pkgsrc?"
+        --yesno "Do you want to install pkgsrc?" 6 50
     case $? in
         0)
-            xbuild_netbsd_install_pkgsrc="yes"
+            install_pkgsrc="yes"; local install_pkgsrc
+            ;;
+        1)
+            install_pkgsrc="no"; local install_pkgsrc
             ;;
         *)
-            xbuild_netbsd_install_pkgsrc="no"
-            ;;
+            return 1
     esac
+
+    if [ "$install_pkgsrc" == "yes" ] ; then
+        install_add_target netbsd_install_pkgsrc "NetBSD pkgsrc"
+    fi
+}
+
+netbsd_dialog_install_doc() {
+    netbsd_doc=$(dialog --stdout --backtitle "$xbuild_dialog_backtitle" \
+        --title "NetBSD documentation" \
+        --checklist "Please select the NetBSD Documentation you want to install." 15 50 4 \
+            "html" "HTML documentation" off \
+            "html1" "Single html file" off \
+            "pdf"   "Documentation in PDF-format." off \
+            "ps"    "Documentation in postscript format" off)
+    rv=$?; local rv
+    if [ $rv -ne 0 ] ; then
+        dialog --backtitle "$xbuild_dialog_backtitle" \
+            --title "NetBSD Documentation Installer aborted!" \
+            --extra-button --extra-label "Documentation" \
+            --ok-label "Restart" --cancel-label "Exit" \
+            --yesno "Installation of NetBSD documenation was canceled!\n\nDo you want to <Restart> the installer, rerun the <Documentation> dialog or <Exit> the installer?" 10 50
+
+        case $? in
+            1)
+                exit ;;
+            3)
+                return 1 ;;
+            0|*)
+                return 2 ;;
+        esac
+    fi
+
+    if [ ! -z "$netbsd_doc" ] ; then
+        for i in $netbsd_doc; do
+            install_add_target netbsd_install_doc "NetBSD Documentation" "$i"
+        done
+    fi
 }
 
 netbsd_dialog_install() {
@@ -109,9 +154,19 @@ netbsd_dialog_install() {
         return 1
     fi
 
-    rv=1; local rv
+    rv=1
     while [ $rv -eq 1 ] ; do
         netbsd_dialog_install_pkgsrc
+        rv=$?
+    done
+    if [ $rv -ne 0 ] ; then
+        return 1
+    fi
+
+    rv=1
+    while [ $rv -eq 1 ] ; do
+        netbsd_dialog_install_doc
+        rv=$?
     done
     if [ $rv -ne 0 ] ; then
         return 1
