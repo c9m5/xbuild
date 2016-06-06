@@ -155,6 +155,13 @@ dialog_install() {
         install_add_target xbuild_postinstall "Postinstall"
 
     # let's install everything in one go
-
+    xbuild_install | dialog --backtitle "$xbuild_dialog_Backtitle" \
+	    --begin 3 $(( (`dialog_max_width` - 50) / 2 )) \
+	    --title "Installer Output" \
+	    --tailboxbg "$xbuild_install_log" $(( `dialog_max_height` - 12 )) 50 \
+    	--and-widget --keep-window \
+	    --begin $(( `dialog_max_height` - 9 )) $(( (`dialog_max_width` - 50) / 2 )) \
+	    --title "Progress" \
+    	--gauge "Installing ..." 6 50 0
 }
 

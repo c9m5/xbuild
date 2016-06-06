@@ -165,7 +165,10 @@ __EOF__
 }
 
 xbuild_install_config_files() {
-
+    if [ ! -r "${xbuild_config_dir}/xbuild.rc" ] ; then
+        echo "[FILE] ${xbuild_config_dir}/xbuild.rc"
+        echo "#!/bin/sh" >> xbuild.rc
+    fi
 }
 
 xbuild_postinstall() {
@@ -175,6 +178,10 @@ xbuild_postinstall() {
 echo "#END:xbuild:${instuser}:INSTALL" >> /etc/fstab
 __EOF__
     fi
+}
+
+xbuild_install() {
+    . "$xbuild_install_script"
 }
 
 

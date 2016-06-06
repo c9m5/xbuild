@@ -120,6 +120,8 @@ xbuild_config_install() {
     : ${xbuild_skel_dir:="${xbuild_base_dir}/skel"}
 
     install_log="${xbuild_tmp_dir}/install.log"
+    xbuild_install_log=${install_log}
+
     xbuild_install_script="${xbuild_tmp_dir}/install.sh"
 
     . "${xbuild_libdir}/install.sh"

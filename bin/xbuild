@@ -1,1 +1,71 @@
 #!/bin/sh
+
+if [ ! "$xbuild_prefix" ] ; then
+    xbuild_prefix=`realpath $0`
+    xbuild_prefix="${xbuild_prefix%%/bin/xbuild-install}"; export xbuild_prefix
+fi
+
+. ${xbuild_prefix}/lib/xbuild/config.sh
+
+args="`getopt "D" $`"
+if [ $? -ne 0 ] ; then
+    exit 2
+fi
+set -- $args
+
+while [ $# -gt 0 ] ; do
+    case $1 in
+        -D) # suppress dialogs
+            xbuild_suppress_dialogs="yes"
+            shift
+            ;;
+        --)
+            shift
+            break
+            ;;
+    esac
+done
+
+# check if ware installed in userdir
+if [ "$xbuild_is_installed" == "no" ] ; then
+    if [ $# == "0" ]; then
+        if [ "$xbuild_suppress_dialogs" == "yes" ] ; then
+            echo "\"xbuild\" is not installed!" >&2
+            echo "Please install xbuild by running \"xbuild install\"!"
+        else
+            dialog --backtitle "${xbuild_dialog_backtitle}" \
+                --title "XBUILD NOT INSTALLED!" \
+                --yesno "\"xbuild\" is not installed!\n\nDo you want to install it now?" 10 50
+            if [ $? -eq 0 ] ; then
+                xbuild_config_install
+                xbuild_dialog_install
+            fi
+            exit 0
+        fi
+    elif [ "$1" == "install" ] ; then
+        xbuild_config_install
+        xbuild_dialog_install
+        exit 0
+    else
+        if [ "$xbuild_suppress_dialogs" == "yes" ] ; then
+            echo "\"xbuild\" is not installed in your homedir!" >&2
+            echo "Please install xbuild by running \"xbuild install\"." >&2
+        else
+            dialog --backtitle "${xbuild_dialog_backtitle}" \
+                --title "XBUILD NOT INSTALLED!" \
+                --msgbox "\"xbuild\" ins not installed!\n\nPlease install xbuild by running \"xbuild install\"." 10 50
+        fi
+        exit 1
+    fi
+fi
+
+#### parsing commands ####
+#shift_to_next_command='until ([ $# -eq 0 ] || [ "$1" == "--end" ]); do; shift; done; shift'
+
+while [ $# -gt 0 ] ; do
+    case $1 in
+        case *)
+            exit 1
+    esac
+done
+
