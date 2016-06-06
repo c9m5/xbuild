@@ -44,16 +44,18 @@ netbsd_install_sources() {
     : ${ftp_retries:=10}
 
     src="NetBSD-$1"; local src
-    downdir="xbuild_temp_dir/downloads/NetBSD-$1"; local downdir
+    downdir="${xbuild_temp_dir}/downloads/${src}"; local downdir
     pwd_save="$(pwd)"; local pwd_save
 
     if [ ! -d "$downdir" ] ; then
         mkdir -p "$downdir"
     fi
 
-    echo "[DIR] ${netbsd_base_dir}/${src}"
+    if [ ! -d "${netbsd_base_dir}/${src}" ] ; then
+        echo "[DIR] ${netbsd_base_dir}/${src}"
+        mkdir -p "${netbsd_base_dir}/${src}"
+    fi
 
-    mkdir -p
     case $target in
         *-release-*)
             targz="bin common compat compat config crypto dist distrib doc etc external extsrc games gnu include lib libexec regress rescue sbin share sys tests tools top-level usr.bin usr.sbin x11"; local targz
@@ -78,6 +80,11 @@ __EOF__
                             && [ "`sha1 "${downdir}/${tarball}" | cut -f 2 -d = -`" =0 "`cat "${downdir}/${tarball}.SHA1" | cut -f 2 -d = -`" ]) ; then
                         echo "Checksum of \"${tarball}\" OK"
                         file_ok="yes"
+                    else
+                        error "Download of \"${src}/${tarball}\" failed!"
+                        if [ $retr -le $ftp_retries ] ; then
+                            error "Retry ..."
+                        fi
                     fi
                 done
                 if [ file_ok="yes" ] ; then
@@ -90,7 +97,6 @@ __EOF__
             done
             ;;
         *)
-
             targz="gnusrc sharesrc src syssrc xsrc"; local targz
 
             for i in targz; do
@@ -98,17 +104,71 @@ __EOF__
                 retr=0; local retr
                 tarball="${i}.tar.gz"; local tarball
 
-                echo "Downloading ${src} \"${tarball}\"."
-                ftp -inV "${netbsd_ftp_root}/${target}/source/sets/" << __EOF__
+                while ([ "$file_ok" == "no" ] && [ $retr -le $ftp_retries ]) ; do
+                    retr=$(( $retr + 1 ))
+
+                    echo "Downloading ${src} \"${tarball}\"."
+                    ftp -inV "${netbsd_ftp_root}/${target}/source/sets/" << __EOF__
 lcd ${downdir}
+get ${tarball}.MD5
+get ${tarball}.SHA1
 get ${tarball}
 bye
 __EOF__
+                    if ([ "`cat "${downdir}/${tarball}.MD5" | cut -f 2 -d = -`" == "`md5 "${downdir}/${tarball}" | cut -f 2 -d = -`" ] \
+                            && "`cat "${downdir}/${tarball}.SHA1" | cut -f 2 -d = -`" == "`sha1 "${downdir}/${tarball}" | cut -f 2 -d = -`" ]) ; then
+                        file_ok="yes"
+                    else
+                        error "Download of \"${src}/${tarball}\" failed!"
+                        if [ $retr -le $ftp_retries ] ; then
+                            error "Retry ..."
+                        fi
+                    fi
+                done
+
+                if [ file_ok="yes" ] ; then
+                    # extract files to temp dir and move them to dest
+                    tar -xzvC "${netbsd_base_dir}/${src}" -f "${downdir}/${tarball}"
+                    mv -v "${netbsd_base_dir}/${src}/usr/*" "${netbsd_base_dir}/${src}/"
+                else
+                    error "Unable to download tarballs for \"${src}\"!"
+                    return 1
+                fi
             done
             ;;
     esac
 }
 
 netbsd_install_pkgsrc() {
+    ftpaddr="ftp://ftp.NetBSD.org/pub/pkgsrc/stable"; local ftpaddr
+    max_retries=5; local max_retries
+    file_ok="no"; local file_ok
+    retr=0; local retr
+
+    mkdir -p "${netbsd_base_dir}/pkgsrc"
+
+    echo "Downloading \"pkgsrc.tar.xz\""
+    while ([ "$file_ok" == "no" ] && [ $retr -le $max_retries ]); do
+        retr=$(( $retr + 1 ))
+
+        wget -t 10 -T 10 -p "${xbuild_temp_dir}" "${ftpaddr}/pkgsrc.tar.xz" \
+            && wget -t 10 -T 10 -p "${xbuild_temp_dir}" "${ftpaddr}/pkgsrc.tar.xz.MD5" \
+            && wget -t 10 -T 10 -p "${xbuild_temp_dir}" "${ftpaddr}/pkgsrc.tar.xz.SHA1"
+        if [ $? - ne 0 ] ; then
+            error "Unable to download \"pkgsrc\"."
+            return 2
+        fi
+
+        if ([ "`cat "${xbuild_temp_dir}/pkgsrc.tar.xz.MD5" | cut -f 2 -d = -`" == "`md5 "${xbuild_temp_dir}/pkgsrc.tar.xz" | cut -f 2 -d = -`" ] \
+                && [ "`cat "${xbuild_temp_dir}/pkgsrc.tar.xz.SHA1" | cut -f 2 -d = -`" == "`sha1 "${xbuild_temp_dir}/pkgsrc.tar.xz" | cut -f 2 -d = -`" ]); then
+            file_ok="yes"
+        fi
+    done
+    if [ "$file_ok" == "yes" ] ; then
+        tar -xJvC "${netbsd_base_dir}" -f "{xbuild_temp_dir}/pkgsrc.tar.xz"
+    else
+        error "Downloading pkgsrc failed!"
+        return 2
+    fi
 }
 
