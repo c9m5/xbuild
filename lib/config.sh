@@ -86,8 +86,9 @@ if [ -z `command -v sudo` ] ; then
 fi
 
 # SVN/SVNlite
-: XBUILD_SVN="${XBUILD_SVN:=`command -v svnlite`"}
-: XBUILD_SVN="${XBUILD_SVN:=`command -v svn`"}
+: ${XBUILD_SVN:="`command -v svnlite`"}
+: ${XBUILD_SVN:="`command -v svn`"}
+
 if [ -z "$XBUILD_SVN" ] ; then
     error "Neither \"svnlite\" nor \"svn\" have been found on your system!"
     error "Please install atleast one of them!"
@@ -95,7 +96,7 @@ if [ -z "$XBUILD_SVN" ] ; then
 fi
 
 # CVS
-: XBUILD_CVS="${XBUILD_CVS:=`command -v cvs`"}
+: ${XBUILD_CVS:="`command -v cvs`"}
 if [ -z "XBUILD_CVS" ] ; then
     error "\"CVS\" is required for NetBSD!"
     error "Please install netbsd!"

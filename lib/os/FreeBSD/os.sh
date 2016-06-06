@@ -66,7 +66,7 @@ freebsd_have_system_ports() {
 }
 
 freebsd_lookup_src() {
-    if [ "`svnlite ls $freebsd_svn_base | grep "head"`"  != "head/" ] ; then
+    if [ "`"$XBUILD_SVN" ls $freebsd_svn_base | grep "head"`"  != "head/" ] ; then
         error "Lookup failed! Are you connected to the internet?"
         return 1
     fi

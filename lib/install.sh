@@ -108,7 +108,7 @@ xbuild_install_print_target() {
 
 # WARNING: Don't call this function directly!
 xbuild_install_target() {
-    xbuild_install_count=$(( $xbuild_install_cnt + 1 ))
+    xbuild_install_count=$(( $xbuild_install_count + 1 ))
 
     target="$1"; local target
     message="Installing $2 ..."; local message
@@ -150,8 +150,8 @@ xbuild_install_base() {
     done
 
     for i in scripts skel skel/config skel/mroot skel/mnt skel/work skel/img skel/pkg; do
-        echo "[DIR] ${xbuild_basedir}/${i}"
-        mkdir -p "${basedir}/${i}"
+        echo "[DIR] ${xbuild_base_dir}/${i}"
+        mkdir -p "${xbuild_base_dir}/${i}"
     done
 
 
@@ -181,6 +181,7 @@ __EOF__
 }
 
 xbuild_install() {
+    xbuild_install_count=0
     . "$xbuild_install_script"
 }
 

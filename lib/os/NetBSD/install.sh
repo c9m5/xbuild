@@ -93,7 +93,7 @@ __EOF__
                 else
                     error "Unable to download tarballs for \"${src}\"!"
                     return 1
-                done
+                fi
             done
             ;;
         *)

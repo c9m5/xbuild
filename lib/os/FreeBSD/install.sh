@@ -99,6 +99,7 @@ __EOF__
         retr=0; local retr
 
         while ([ $rv -ne 0 ] && [ $retr -le $xbuild_svn_retries ]); do
+            echo "$XBUILD_SVN checkout ${freebsd_svn_base}/$1 $srcinstdir"
             "$XBUILD_SVN" checkout "${freebsd_svn_base}/$1" "$srcinstdir"
             rv=$?
             if [ $rv -ne 0 ] ; then
@@ -164,7 +165,7 @@ __EOF__
                 retr=$(( $retr + 1 ))
                 "$XBUILD_SVN" checkout  "$freebsd_svn_ports" "$portsdir"
                 rv=$?
-                if [ $rv -ne 0 ]; do
+                if [ $rv -ne 0 ]; then
                     "$XBUILD_SVN" cleanup "$portsdir"
                     sleep 10
                 fi

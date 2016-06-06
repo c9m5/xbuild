@@ -2,15 +2,16 @@
 
 if [ ! "$xbuild_prefix" ] ; then
     xbuild_prefix=`realpath $0`
-    xbuild_prefix="${xbuild_prefix%%/bin/xbuild-install}"; export xbuild_prefix
+    xbuild_prefix="${xbuild_prefix%%/bin/xbuild}"; export xbuild_prefix
 fi
 
 . ${xbuild_prefix}/lib/xbuild/config.sh
 
-args="`getopt "D" $`"
+args="`getopt "D"`"
 if [ $? -ne 0 ] ; then
     exit 2
 fi
+echo $args
 set -- $args
 
 while [ $# -gt 0 ] ; do
@@ -27,8 +28,9 @@ while [ $# -gt 0 ] ; do
 done
 
 # check if ware installed in userdir
+
 if [ "$xbuild_is_installed" == "no" ] ; then
-    if [ $# == "0" ]; then
+    if [ $# -eq 0 ]; then
         if [ "$xbuild_suppress_dialogs" == "yes" ] ; then
             echo "\"xbuild\" is not installed!" >&2
             echo "Please install xbuild by running \"xbuild install\"!"
@@ -38,13 +40,13 @@ if [ "$xbuild_is_installed" == "no" ] ; then
                 --yesno "\"xbuild\" is not installed!\n\nDo you want to install it now?" 10 50
             if [ $? -eq 0 ] ; then
                 xbuild_config_install
-                xbuild_dialog_install
+                dialog_install
             fi
             exit 0
         fi
     elif [ "$1" == "install" ] ; then
         xbuild_config_install
-        xbuild_dialog_install
+        dialog_install
         exit 0
     else
         if [ "$xbuild_suppress_dialogs" == "yes" ] ; then

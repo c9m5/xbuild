@@ -111,7 +111,7 @@ __EOF__
         if [ "$i" == "system" ] ; then
             syssrc=$(dialog --stdout --backtitle "$xbuild_dialog_backtitle" \
                 --title "System Sources" \
-                --radiolist "Please select the install method for \"System Sources\"." 6 50 2 \
+                --radiolist "Please select the install method for \"System Sources\"." 10 50 2 \
                     "symlink"   "Use a symlink"  on \
                     "nullfs"    "Nullfs mount. (requires sudo!)" off)
             : ${syssrc:="symlink"}
