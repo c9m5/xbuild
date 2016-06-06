@@ -90,17 +90,20 @@ __EOF__
             done
             ;;
         *)
+
             targz="gnusrc sharesrc src syssrc xsrc"; local targz
 
             for i in targz; do
+                file_ok="no"; local file_ok
+                retr=0; local retr
                 tarball="${i}.tar.gz"; local tarball
+
                 echo "Downloading ${src} \"${tarball}\"."
                 ftp -inV "${netbsd_ftp_root}/${target}/source/sets/" << __EOF__
 lcd ${downdir}
 get ${tarball}
 bye
 __EOF__
-
             done
             ;;
     esac
