@@ -1,0 +1,16 @@
+# Files to ignore
+*~
+*.tmp
+*.temp
+*.log
+*.test
+
+# files in etc
+etc/*.rc
+etc/*.conf
+
+# symlinks 
+lib/xbuild
+share/xbuild
+share/locale
+
