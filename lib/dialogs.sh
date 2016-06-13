@@ -1,7 +1,7 @@
 #!/bin/sh
 #
 # Author(s): c9m5
-# File: xbuildconfig
+# File: lib/xbuild/dialogs.sh
 # Description: Description
 #
 ################################################################################
@@ -33,53 +33,58 @@
 #
 # Changelog:
 
-if [ ! "$xbuild_prefix" ] ; then
-    xbuild_prefix=`realpath $0`
-    xbuild_prefix="${xbuild_prefix%%/bin/xbuildconfig}"; export xbuild_prefix
-fi
-
-. ${xbuild_prefix}/lib/xbuild/config.sh
-
-if [ "$xbuild_is_installed" == "no" ] ; then
-    $xbuild_dialog --backtitle "${xbuild_dialog_backtitle}" \
-        --yesno "\"xbuild\" is not installed in your homedir!\nDo you want to install it now?" 8 40
-    if [ $? -eq 0 ] ; then
-        installdir=$(dialog --stdout \
-            --backtitle "${xbuild_dialog_backtitle}" \
-            --title "Installation directory" \
-            --dselect "${HOME}/xbuild" 15 50)
+xb_install_menu() {
+    local rv=0
+    while [ $rv -eq 0 ] ; do
+        local x=$(dialog --stdout --backtitle "${xbuild_dialog_backtitle}" \
+            --title "Install Components" \
+            --menu "Install additional components:" 12 30 5 \
+                "X" "Exit" \
+                "F" "FreeBSD")
         rv=$?
         if [ $rv -eq 0 ] ; then
-            "${xbuild_bindir}/xbuild-bootstrap" -d "$installdir"
+            case $x in
+                X)
+                    return 0
+                    break;;
+                F)
+                    xb_freebsd_install_menu
+                    ;;
+            esac
         fi
-    fi
-fi
-. "${xbuild_prefix}/lib/xbuild/config.sh"
-if [ "$xbuild_is_installed" == "no" ] ; then
-    exit 0
-fi
+    done
+}
 
+xb_main_menu() {
+    rv=0; local rv
+    x=""; local x
 
-exit_config="no"
-while [ "$exit_config" != "yes" ] ; do
-    menu=$($xbuild_dialog --stdout --backtitle "$xbuild_dialog_backtitle" \
-        --menu "xbuild Config"  15 20 8\
-            "X" "Exit" \
-            "F" "FreeBSD" \
-            "N" "NetBSD" \
-            "G" "Gentoo Linux" \
-            "L" "Linux from Scratch" )
-    if [ $? -ne 0 ] ; then
-        exit_config="yes"
-    fi
-    case $menu in
-        F)
-            ;;
-        N)
-            ;;
-        X)
-            exit_config="yes"
-            ;;
-    esac
-done
+    while [ $rv -eq 0 ] ; do
+        x=$(dialog --stdout --backtitle "${xbuild_dialog_backtitle}" \
+                --title "XBuild" \
+                --menu "XBuild Main Menu" 12 30 5\
+                    "X" "Exit" \
+                    "P" "Projects" \
+                    "C" "Configure XBuild" \
+                    "I" "Install Components")
+        rv=$?
+        local x
+        if [ $rv -eq 0 ] ; then
+            case $x in
+                X)
+                    break;;
+                C)
+                    #configure_menu
+                    ;;
+                I)
+                    xb_install_menu
+                    ;;
+                P)
+                    #projects_menu
+                    ;;
+            esac
+        fi
+    done
+}
+
 

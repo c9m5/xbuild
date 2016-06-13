@@ -40,13 +40,18 @@ fi
 
 . ${xbuild_prefix}/lib/xbuild/config.sh
 
-args="`getopt "V"`"
+args="`getopt "VD" $*`"
 if [ $? -ne 0 ] ; then
     exit 2
 fi
 set -- $args
 while [ $# -gt 0 ] ; do
     case $1 in
+        -D)
+            xbuild_suppress_dialogs="yes"
+            export xbuild_suppress_dialogs
+            shift
+            ;;
         -V)
             echo "xbuild Version: ${xbuild_version}"
             exit 0
@@ -60,24 +65,68 @@ done
 
 # check if ware installed in userdir
 
-#### parsing commands ####
+
 #shift_to_next_command='until ([ $# -eq 0 ] || [ "$1" == "--end" ]); do; shift; done; shift'
-if ([ "$xbuild_is_installed" == "no" && [ $# -eq 0 ]); then
-    "${xbuild_bindir}/xbuildconfig"
-    . "${xbuild_prefix}/lib/"
+
+##### check if we are bootstrapped #####
+if ([ "$xbuild_is_installed" == "no" ]) ; then
+    if ([ $# -eq 0 ] || [ "$1"  == "bootstrap" ]); then
+        if [ "$xbuild_suppress_dialogs" == "no" ] ; then
+            $xbuild_dialog --backtitle "${xbuild_dialog_backtitle}" \
+                --yesno "\"xbuild\" is not installed in your homedir!\nDo you want to install it now?" 8 40
+            if [ $? -eq 0 ] ; then
+                installdir=$(dialog --stdout \
+                    --backtitle "${xbuild_dialog_backtitle}" \
+                    --title "Installation directory" \
+                    --dselect "${HOME}/xbuild" 15 50)
+                rv=$?
+                if [ $rv -eq 0 ] ; then
+                    "${xbuild_bindir}/xbuild-bootstrap" -d "$installdir"
+                fi
+            fi
+        else # dialogs suppressed
+            if [ $# -eq 0 ] ; then
+                echo "xbuild is not installed to your homedir!"
+                read -p "do you want to bootstrap now?" rd
+                if [ "`xb_is_true $rd`" == "yes" ] ; then
+                    read -p "Where do you want to install it? [${installdir:${HOME}/xbuild}]" rd
+                    : ${rd:="${HOME}/xbuild"}
+                    xbuild_bootstrap -d "$rd"
+                fi
+            else
+                xbuild-bootstrap $@
+                exit $?
+            fi
+        fi
+        . "${xbuild_prefix}/lib/xbuild/config.sh"
+    fi
 fi
+
 if [ "$xbuild_is_installed" == "no" ] ; then
     echo "xbuild not bootstrapped!" >&2
+    echo "Please run \"xbuild bootstrap\"" >&2
     exit 1
+fi
+
+
+##### parsing commands #####
+# if we don't have any arguments, start the menu
+if [ $# -eq 0 ] ; then
+    xb_main_menu
 fi
 
 while [ $# -gt 0 ] ; do
     case $1 in
-        bootstrap)
-            ${xbuild_bindir}/xbuild-bootstrap $*W
+#        config)
+#            #${xbuild_bindir}/xbuild-config
+#            shift
+#            ;;
+        install)
+            xb_install_menu
+            shift
             ;;
-        config)
-            ${xbuild_bindir}/xbuild-config
+        menu)
+            xb_main_menu
             shift
             ;;
         *)

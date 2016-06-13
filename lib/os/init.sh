@@ -1,7 +1,7 @@
 #!/bin/sh
 #
 # Author(s): c9m5
-# File: xbuildconfig
+# File: lib/xbuild/os/init.sh
 # Description: Description
 #
 ################################################################################
@@ -33,53 +33,6 @@
 #
 # Changelog:
 
-if [ ! "$xbuild_prefix" ] ; then
-    xbuild_prefix=`realpath $0`
-    xbuild_prefix="${xbuild_prefix%%/bin/xbuildconfig}"; export xbuild_prefix
-fi
-
-. ${xbuild_prefix}/lib/xbuild/config.sh
-
-if [ "$xbuild_is_installed" == "no" ] ; then
-    $xbuild_dialog --backtitle "${xbuild_dialog_backtitle}" \
-        --yesno "\"xbuild\" is not installed in your homedir!\nDo you want to install it now?" 8 40
-    if [ $? -eq 0 ] ; then
-        installdir=$(dialog --stdout \
-            --backtitle "${xbuild_dialog_backtitle}" \
-            --title "Installation directory" \
-            --dselect "${HOME}/xbuild" 15 50)
-        rv=$?
-        if [ $rv -eq 0 ] ; then
-            "${xbuild_bindir}/xbuild-bootstrap" -d "$installdir"
-        fi
-    fi
-fi
-. "${xbuild_prefix}/lib/xbuild/config.sh"
-if [ "$xbuild_is_installed" == "no" ] ; then
-    exit 0
-fi
-
-
-exit_config="no"
-while [ "$exit_config" != "yes" ] ; do
-    menu=$($xbuild_dialog --stdout --backtitle "$xbuild_dialog_backtitle" \
-        --menu "xbuild Config"  15 20 8\
-            "X" "Exit" \
-            "F" "FreeBSD" \
-            "N" "NetBSD" \
-            "G" "Gentoo Linux" \
-            "L" "Linux from Scratch" )
-    if [ $? -ne 0 ] ; then
-        exit_config="yes"
-    fi
-    case $menu in
-        F)
-            ;;
-        N)
-            ;;
-        X)
-            exit_config="yes"
-            ;;
-    esac
-done
+xb_os_initialize() {
+}
 

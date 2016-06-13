@@ -49,20 +49,94 @@ fi
 : ${xbuild_boardlibdir:="${xbuild_libdir}/boards"}
 
 ################################################################################
-# generic config
+# Generic Config
 ################################################################################
 
+. "${xbuild_libdir}/misc.sh"
+
+# load global config-files
+for i in "/etc" "/usr/local/etc" "${xbuild_prefix}/etc"; do
+    if [ -r "${i}/xbuild.rc" ] ; then
+        . "${i}/xbuild.rc"
+    fi
+done
+
+: ${xbuild_suppress_dialogs:="no"}
 : ${xbuild_dialog:="dialog"}
 xbuild_dialog_backtitle="xbuild - Cross Build Toolkit for Embedded Systems"
 
-################################################################################
 # Check if we are installed
-################################################################################
-
 if [ -r "${HOME}/.xbuildrc" ] ; then
     xbuild_is_installed="yes"
+    . "${HOME}/.xbuildrc"
+
+    : ${XBUILD_CONFIGDIR:="${XBUILD_ROOT}/config"}
+    : ${XBUILD_BASEDIR:="${XBUILD_ROOT}/xbuild"}
+    debug "XBUILD_CONFIGDIR=${XBUILD_CONFIGDIR}"
+    debug "XBUILD_BASEDIR=${XBUILD_BASEDIR}"
 else
     xbuild_is_installed="no"
 fi
+
+: ${xbuild_tempdir:="`mktemp -d /tmp/c9.xbuild.XXXX`"}
+if [ ! -d "$xbuild_tempdir" ] ; then
+    mkdir -p "${xbuild_tempdir}"
+fi
+trap "rm -rf $xbuild_tempdir" EXIT QUIT
+
+################################################################################
+# Programs
+################################################################################
+
+if [ -z "`command -v sudo`" ] ; then
+    echo "sudo not found" >&2
+    echo "Please install sudo" >&2
+fi
+
+if [ ! -z "`command -v svn`" ] ; then
+    : ${XBUILD_SVN:="`command -v svn`"}
+elif [ ! -z "`command -v svnlite`" ] ; then
+    : ${XBUILD_SVN:="`command -v svnlite`"}
+fi
+if [ -z "$XBUILD_SVN" ] ; then
+    error "\"svn\"  is not installed!"
+    error "Please install \"svn\" or \"svnlite\"!"
+fi
+: ${SVN_RETRIES:=10}
+: ${SVN_RETRY_SLEEP:=5}
+
+################################################################################
+#
+################################################################################
+
+#. "${xbuild_oslibdir}/init.sh"
+
+
+################################################################################
+# Load environment
+################################################################################
+
+. "${xbuild_libdir}/dialogs.sh"
+
+# load supported operating systems
+xbuild_os_list=""
+
+for i in ${xbuild_oslibdir}/* ; do
+    if ([ -d "$i" ] && [ -r "${i}/os.conf" ]) ; then
+        debug "Loading OS ${i##$xbuild_oslibdir}"
+        . "${i}/os.conf"
+        if [ -r ${i}/imports ] ; then
+            for ifile in `cat ${i}/imports`; do
+                debug "IMPORT \"${i}/${ifile}\""
+                . "${i}/${ifile}"
+            done
+        fi
+    fi
+    unset x
+done
+
+################################################################################
+# functions
+################################################################################
 
 

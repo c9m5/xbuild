@@ -1,7 +1,7 @@
 #!/bin/sh
 #
 # Author(s): c9m5
-# File: xbuildconfig
+# File: lib/xbuild/misc.sh
 # Description: Description
 #
 ################################################################################
@@ -33,53 +33,83 @@
 #
 # Changelog:
 
-if [ ! "$xbuild_prefix" ] ; then
-    xbuild_prefix=`realpath $0`
-    xbuild_prefix="${xbuild_prefix%%/bin/xbuildconfig}"; export xbuild_prefix
-fi
+################################################################################
+# Print functions
+################################################################################
+: ${xbuild_verbose_level:=3}
 
-. ${xbuild_prefix}/lib/xbuild/config.sh
+debug()
+{
+    local eargs=""
 
-if [ "$xbuild_is_installed" == "no" ] ; then
-    $xbuild_dialog --backtitle "${xbuild_dialog_backtitle}" \
-        --yesno "\"xbuild\" is not installed in your homedir!\nDo you want to install it now?" 8 40
-    if [ $? -eq 0 ] ; then
-        installdir=$(dialog --stdout \
-            --backtitle "${xbuild_dialog_backtitle}" \
-            --title "Installation directory" \
-            --dselect "${HOME}/xbuild" 15 50)
-        rv=$?
-        if [ $rv -eq 0 ] ; then
-            "${xbuild_bindir}/xbuild-bootstrap" -d "$installdir"
+    if ([ "$1" == "-e" ] || [ "$1" == "-n" ]) ; then
+        eargs="$1"
+        shift
+    fi
+    if [ $xbuild_verbose_level -ge 3 ] ; then
+        builtin echo ${eargs} "[DEBUG] > $*"
+    fi
+}
+
+message2() {
+    if [ $xbuild_verbose_level -ge 3] ; then
+        local eargs=""
+        if ([ "$1" == "-e" ] || [ "$1" == "-n" ]) ; then
+            eargs="$1"
+            shift
         fi
+
+        builtin echo ${eargs} "[DEBUG] > $*"
     fi
-fi
-. "${xbuild_prefix}/lib/xbuild/config.sh"
-if [ "$xbuild_is_installed" == "no" ] ; then
-    exit 0
-fi
+}
+
+################################################################################
+# Boolean Comaprison
+################################################################################
 
 
-exit_config="no"
-while [ "$exit_config" != "yes" ] ; do
-    menu=$($xbuild_dialog --stdout --backtitle "$xbuild_dialog_backtitle" \
-        --menu "xbuild Config"  15 20 8\
-            "X" "Exit" \
-            "F" "FreeBSD" \
-            "N" "NetBSD" \
-            "G" "Gentoo Linux" \
-            "L" "Linux from Scratch" )
-    if [ $? -ne 0 ] ; then
-        exit_config="yes"
+
+xb_error() {
+    builtin echo $@ >&2
+}
+
+xb_boolean() {
+    if [ -z "$1" ] ; then
+        local x="no"
+    else
+        local x="`echo $1 | sed -e s/1/yes/ -e s/y/yes/i -e s/"true"/yes/i -e s/yes/yes/i -e s/on/yes/i -e s/[0]/no/ -e s/n/no/i -e s/"false"/no/i -e s/no/no/i -e s/off/no/i`"
     fi
-    case $menu in
-        F)
-            ;;
-        N)
-            ;;
-        X)
-            exit_config="yes"
-            ;;
-    esac
-done
+
+    if ([ "$x" == "yes" ] || [ "$x" == "no" ]) ; then
+        builtin echo $x
+    else
+        return 1
+    fi
+}
+
+xb_is_true() {
+    local x=$(xb_boolean $1)
+    if [ $? -ne 0 ]; then
+        return 1
+    fi
+    builtin echo "$x"
+}
+
+xb_is_false() {
+    local x=$(xb_boolean $1)
+    if [ $? -ne 0 ]; then
+        return 1
+    fi
+    if [ "$x" == "no" ] ; then
+        builtin echo "yes"
+    else
+        builtin echo "no"
+    fi
+}
+
+################################################################################
+# xbuild_os_list functions
+################################################################################
+
+# name install current
 
