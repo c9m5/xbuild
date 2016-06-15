@@ -83,7 +83,41 @@ if [ ! -d "$xbuild_tempdir" ] ; then
     mkdir -p "${xbuild_tempdir}"
 fi
 trap "rm -rf $xbuild_tempdir" EXIT QUIT
+#########
+echo X
+##########
+if ([ "${xbuild_is_installed}" == "yes" ] && [ -r "${XBUILD_CONFIGDIR}/xbuild.rc" ]) ; then
+    debug "Loading \"${XBUILD_CONFIGDIR}/xbuild.rc\""
+    . "${XBUILD_CONFIGDIR}/xbuild.rc"
 
+    # load files
+    if [ -n "${XBUILD_IMPORT_FILES}" ] ; then
+        for i in ${XBUILD_IMPORT_FILES}; do
+            if [ "`echo $i | cut -c 1 -`" == "/" ] ; then
+                local ifile="$i"
+            else
+                local ifile="${XBUILD_CONFIGDIR}/${i}"
+            fi
+            if [ -r "$ifile" ] ; then
+                debug "Loading $ifile"
+                . "$ifile"
+            else
+                error "Unable to read file \"$ifile\"! Ignoring!"
+            fi
+        done
+    fi
+fi
+#############
+echo XX
+############
+: ${XBUILD_DOWNLOADDIR:="${HOME}/Downloads/xbuild"}
+echo $XBUILD_DOWNLOADDIR
+if [ ! -d "${XBUILD_DOWNLOADDIR}" ] ; then
+    mkdir -p "$XBUILD_DOWNLOADDIR"
+fi
+###########
+echo XXX
+###########
 ################################################################################
 # Programs
 ################################################################################
@@ -92,6 +126,7 @@ if [ -z "`command -v sudo`" ] ; then
     echo "sudo not found" >&2
     echo "Please install sudo" >&2
 fi
+: ${XBUILD_SUDO:="sudo"}
 
 if [ ! -z "`command -v svn`" ] ; then
     : ${XBUILD_SVN:="`command -v svn`"}

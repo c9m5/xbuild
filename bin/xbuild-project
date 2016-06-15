@@ -1,8 +1,8 @@
 #!/bin/sh
 #
 # Author(s): c9m5
-# File: lib/xbuild/os/FreeBSD/os.conf
-# Description: config for FreeBSD
+# File: xbuild-project
+# Description: Description
 #
 ################################################################################
 # This is free and unencumbered software released into the public domain.      #
@@ -32,32 +32,48 @@
 ################################################################################
 #
 # Changelog:
-#
 
-freebsd_version="0.0.1"
-freebsd_tag="freebsd"       # tag variables/functions
-                            #   xb_${tag}_name for functions
-                            #   xbuild_${tag}_name for variables
-freebsd_uvartag="FREEBSD"   # tag user variables (${TAG}_VARNAME)
-freebsd_menutag="F"         # tag for menu/listentries
-
-OS_VERSION="${freebsd_version}"
-OS_TAG="$freebsd_tag"
-OS_UVARTAG="$freebsd_uvartag"
-OS_MENUTAG="$freebsd_menutag"
-OS_INSTALLMENU="$xb_freebsd_menuinstall"
-OS_UPDATEMENU=""
-OS_PROJECTMENU=""
-
-
-if [ "`uname -o`" == "FreeBSD" ] ; then
-   freebsd_is_host="yes"
+if [ ! "$xbuild_prefix" ] ; then
+    xbuild_prefix=`realpath $0`
+    xbuild_prefix="${xbuild_prefix%%/bin/xbuild}"; export xbuild_prefix
 fi
-: ${freebsd_is_host:="no"}
 
-freebsd_have_installmenu="yes"
+. ${xbuild_prefix}/lib/xbuild/config.sh
 
-freebsd_svn="https://svn.FreeBSD.org"
-freebsd_base_dir="xbuild_base"
+xbuild_project=""
+xbuild_project_name=""
+
+args="`getopt "DVn:t:v" $*`"
+if [ $? -ne 0 ] ; then
+    exit 2
+fi
+set -- $args
+
+while [ $# -gt 0 ] ; do
+    case $1 in
+        -D)
+            xbuild_suppress_dialogs="yes"
+            shift
+            ;;
+        -V) #TODO: print version
+            shift
+            ;;
+        -n)
+            xbuild_project_name="$2"
+            shift; shift
+            ;;
+        -t)
+            xbuild_project="$2"
+            shift; shift
+            ;;
+        -v)
+            [ $xbuild_verbose -lt 3 ] && xbuild_verbose=$(( $xbuild_verbose + 1 ))
+            ;;
+        --)
+            shift; break
+            ;;
+    esac
+done
+
 
 

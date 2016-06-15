@@ -36,20 +36,66 @@
 xb_install_menu() {
     local rv=0
     while [ $rv -eq 0 ] ; do
-        local x=$(dialog --stdout --backtitle "${xbuild_dialog_backtitle}" \
+        x=$(dialog --stdout --backtitle "${xbuild_dialog_backtitle}" \
             --title "Install Components" \
             --menu "Install additional components:" 12 30 5 \
                 "X" "Exit" \
-                "F" "FreeBSD")
+                "F" "FreeBSD" \
+                "N" "NetBSD")
         rv=$?
+        local x
         if [ $rv -eq 0 ] ; then
             case $x in
                 X)
                     return 0
-                    break;;
+                    ;;
                 F)
                     xb_freebsd_install_menu
                     ;;
+                N)
+                    xb_netbsd_install_menu
+                    ;;
+            esac
+        fi
+    done
+}
+
+xb_projects_list_dialog() {
+    prjlist=$(for i in `ls "$XBUILD_ROOT"`; do
+        if [ -e "${XBUILD_ROOT}/${i}/XBUILD_PROJECT" ] ; then
+            echo "'$i'"
+        fi
+    done)
+
+    echo $prjlist
+
+    local rv=0
+    x=$(dialog --stdout --backtitle "$xbuild_dialog_backtitle" \
+        --title "XBuild Projects" \
+        --radiolist "Please select a Project." 20 50 12 \
+            $(for i in `ls ${XBUILD_ROOT}`; do
+                local prjdir="${XBUILD_ROOT}/$i"
+                if ([ -e ${prjdir}/XBUILD_PROJECT ] && [ -r "${prjdir}/config/project.rc" ]) ; then
+                    . "${prjdir}/config/project.rc"
+                    echo -n "'$i' '${PROJECT_NAME:=$i}' off "
+                fi
+            done) )
+    rv=$?
+    local x
+
+    return rv
+}
+
+xb_projects_menu() {
+    local rv=0
+    while [ $rv -eq 0 ] ; do
+        x=$(dialog --stdout --backtitle "$xbuild_Dialog_backtitle" \
+            projects --stdout
+        )
+        rv=$?
+        local x
+        if [ $rv -eq 0 ] ; then
+            case $x in
             esac
         fi
     done
@@ -64,6 +110,7 @@ xb_main_menu() {
                 --title "XBuild" \
                 --menu "XBuild Main Menu" 12 30 5\
                     "X" "Exit" \
+                    "1" "Create new Project" \
                     "P" "Projects" \
                     "C" "Configure XBuild" \
                     "I" "Install Components")
@@ -73,6 +120,9 @@ xb_main_menu() {
             case $x in
                 X)
                     break;;
+                1)
+                    #xb_create_project_dialog
+                    ;;
                 C)
                     #configure_menu
                     ;;
@@ -80,7 +130,7 @@ xb_main_menu() {
                     xb_install_menu
                     ;;
                 P)
-                    #projects_menu
+                    xb_projects_menu
                     ;;
             esac
         fi

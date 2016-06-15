@@ -47,7 +47,7 @@ debug()
         shift
     fi
     if [ $xbuild_verbose_level -ge 3 ] ; then
-        builtin echo ${eargs} "[DEBUG] > $*"
+        builtin echo ${eargs} "[DEBUG] $*"
     fi
 }
 
@@ -70,7 +70,7 @@ message2() {
 
 
 xb_error() {
-    builtin echo $@ >&2
+    builtin echo "[ERROR] $*" >&2
 }
 
 xb_boolean() {
