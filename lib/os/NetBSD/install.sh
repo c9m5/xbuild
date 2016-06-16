@@ -39,6 +39,33 @@
 : ${FTP_RETRIES:=5}
 : ${FTP_TIMEOUT:=5}
 
+xb_netbsd_calc_percent() {
+    local x="$(( ($2 * 100) / $1 ))"
+
+    if [ $x -gt 100 ] ; then
+        echo 100
+    else
+        echo $x
+    fi
+}
+
+xb_netbsd_gauge_percent() {
+    if [ $# -eq 2 ] ; then
+        cat << __EOF__
+XXX
+$2
+$1
+XXX
+__EOF__
+    else
+        echo "$1"
+    fi
+}
+
+################################################################################
+# NetBSD Sources
+################################################################################
+
 xb_netbsd_lookup_sources() {
     if [ -z "$xbuild_netbsd_ftp_sources" ] ; then
         : ${netbsd_dirsrc_file:="${xbuild_tempdir}/netbsd-src.dir"}
@@ -62,28 +89,6 @@ __EOF__
     fi
 }
 
-xb_netbsd_calc_percent() {
-    local x="$(( ($2 * 100) / $1 ))"
-
-    if [ $x -gt 100 ] ; then
-        echo 100
-    else
-        echo $x
-    fi
-}
-
-xb_netbsd_gauge_percent() {
-    if [ $# -eq 2 ] ; then
-        cat << __EOF__
-XXX
-$2
-$1
-XXX
-__EOF__
-    else
-        echo "$1"
-    fi
-}
 
 xb_netbsd_install_sources() {
     local downdir="${XBUILD_DOWNLOADDIR}/$1"
@@ -290,34 +295,80 @@ xb_netbsd_install_sources() {
     fi
 }
 
-xb_netbsd_install_pkgsrc() {
-    local downdir="${XBUILD_DOWNLOADDIR}"
-    local downfiles="pkgsrc.tar.xz.MD5 pkgsrc.tar.xz.SHA1 pkgsrc.tar.gz"
-    local instdir="${XBUILD_BASEDIR}/NetBSD.pkgsrc"
+################################################################################
+# NetBSD pkgsrc
+################################################################################
 
-    if [ -n "$1" ] ; then
+# Lookup pkgsrc on ftp.NetBSD.org.
+# Sets $xbuild_netbsd_ftp_pkgsrc as package list.
+xb_netbsd_lookup_pkgsrc() {
+    :${netbsd_pkgsrc_file:="${xbuild_tempdir}/netbsd-pkgsrc.dir"}
+    xbuild_netbsd_ftp_pkgsrc=""
+
+    if [ ! -r "$netbsd_pkgsrc_file" ] ; then
+        ftp -n "${netbsd_ftp_pkgsrc}/" << __EOF__
+dir . ${netbsd_pkgsrc_file}
+bye
+__EOF__
+    fi
+
+    [ -n "`cat $netbsd_pkgsrc_file | cut -f 9 -w - | grep current`" ] && xbuild_netbsd_ftp_pkgsrc="current"
+
+    for i in `cat ${netbsd_pkgsrc_file} | cut -f 9 -w - | grep 20[0-9][0-9]Q[0-9]` ; do
+        xbuild_netbsd_ftp_pkgsrc="${xbuild_netbsd_ftp_pkgsrc} $i"
+    done
+}
+
+# Install pkgsrc from NetBSD ftp.
+# Use a value from $xbuild_netbsd_ftp_pkgsrc for $1.
+# If $2 is set, dialog output is expected! Set $2 to a logfile.
+xb_netbsd_install_pkgsrc() {
+    local downdir="${XBUILD_DOWNLOADDIR}/NetBSD.pkgsrc"
+
+    if [ "$1" == "current" ] ; then
+        local instdir="${XBUILD_BASEDIR}/NetBSD.pkgsrc-CURRENT"
+    else
+        local instdir="${XBUILD_BASEDIR}/NetBSD.pkgsrc"
+    fi
+
+    for i in tar.xz.MD5 tar.xz.SHA1 tar.xz; do
+        case $1 in
+            current)
+                local downfiles="${downfiles} ${1}/pkgsrc.${i}"
+                ;;
+            *)
+                local downfiles="${downfiles} ${1}/${1}.${i}"
+                ;;
+        esac
+    done
+
+    if [ -n "$2" ] ; then
         local cnt=5
         local n=0
 
 
-        debug "downfiles=\"$downfiles\"" >> "$1"
-        debug "downdir=\"$downdir\"" >> "$1"
-        debug "instdir=\"$instdir\"" >> "$1"
+        debug "downfiles=\"$downfiles\"" >> "$2"
+        debug "downdir=\"$downdir\"" >> "$2"
+        debug "instdir=\"$instdir\"" >> "$2"
+
+        if [ ! -d "${downdir}/$1" ] ; then
+            echo "`mkdir -p "${downdir}/$1"`" >> "$2"
+        fi
 
 
         for i in $downfiles; do
-            n=$(( n + 1 ))
+            n=$(( $n + 1 ))
 
-            xb_netbsd_gauge_percent "Downloading \"$i\" ..." `xb_netbsd_calc_percent $cnt $n`
+            xb_netbsd_gauge_percent "Downloading \"`echo "$i" | cut -f 2 -d / -`\" ..." `xb_netbsd_calc_percent $cnt $n`
             case $i in
                 *.tar.xz.*)
+                    debug "Donwloading $netbsd_ftp_pkgsrc/${i}" >> "$2"
                     wget --progress="dot:default" --waitretry=$FTP_TIMEOUT \
-                        --tries=$FTP_RETRIES -a "$1" \
-                        --directors-preifx="${downdir}" \
-                        "${netbsd_ftp_pkgsrc}/${i}" 2>&1 >> "$1"
+                        --tries=$FTP_RETRIES -a "$2" --directory-prefix="${downdir}/$1" \
+                        "${netbsd_ftp_pkgsrc}/${i}" 2>&1 >> "$2"
 
                     if [ $? -ne 0 ] ; then
-                        error "Unable to download \"${i}\"!" 2>&1 >> "$1"
+                        error "Unable to download \"${i}\"!" 2>&1 >> "$2"
                         return 1
                     fi
                     ;;
@@ -328,59 +379,89 @@ xb_netbsd_install_pkgsrc() {
 
                     while ([ $rv -ne 0 ] && [ $retries -le $FTP_RETRIES ]) ; do
                         retries=$(( $retries + 1 ))
-                        wget --progress="dot:mega" --waitretry=$FTP_TIMEOUT \
-                            --tries=$FTP_RETRIES -a "$1" \
-                            --directors-preifx="${downdir}" \
-                            "${netbsd_ftp_pkgsrc}/${i}" 2>&1 >> "$1"
+                        wget --progress="dot:binary" --waitretry=$FTP_TIMEOUT \
+                            --tries=$FTP_RETRIES -a "$2" \
+                            --directory-prefix="${downdir}/$1" \
+                            "${netbsd_ftp_pkgsrc}/${i}" 2>&1 >> "$2"
                         rv=$?
 
                         if ([ $rv -eq 0 ] \
-                                && [ "`cat "${downdir}/${i}.MD5" | grep "$i" | cut -f 3 -w -`" == "`md5 "${downdir}/${i}" | cut -f 3 -w -`" ] \
-                                && "`cat "${downdir}/${i}.SHA1" | grep "$i" | cut -f 3 -w -`" == "`sha1 "${downdir}/${i}" | cut -f 3 -w -`" ]) ; then
+                                && [ "`cat "${downdir}/${i}.MD5" | cut -f 4 -w -`" == "`md5 -q "${downdir}/${i}"`" ] \
+                                && [ "`cat "${downdir}/${i}.SHA1" | cut -f 4 -w -`" == "`sha1 -q "${downdir}/${i}"`" ]) ; then
                             rv=0
                         else
                             rv=1
+                            echo "[RM] `rm -v ${downdir}/${i}`"
                             sleep $FTP_TIMEOUT
                         fi
                     done
                     if [ $rv -ne 0 ] ; then
-                        error "Unable to download \"${i}\"!" 2>&1 >> "$1"
+                        error "Unable to download \"${i}\"!" 2>&1 >> "$2"
                         return 1
                     fi
                     n=$(( n + 1 ))
+                    [ ! -d "$instdir" ] && echo "[MKDIR] `mkdir -v "$instdir"`"
+
                     xb_netbsd_gauge_percent "Extracting \"$i\" ..." `xb_netbsd_calc_percent $cnt $n`
-                    tar -xJvf "${downdir}/$i" --strip-components 1 -C "${instdir}" 2>&1 >> "$1"
+                    local strip_components="--strip-components 1"
+                    tar -xJvf "${downdir}/${i}" ${strip_componenst} -C "${instdir}" 2>&1 >> "$2"
+
+                    if [ ! -r ${instdir}/Makefile ] && [ -d "${instdir}/pkgsrc" ] ; then
+                        xb_netbsd_gauge_percent "Moving files ..." 99
+                        for i in `ls "${instdir}/pkgsrc/"`; do
+                            echo "[MV] `mv -v "${instdir}/pkgsrc/$i" "${instdir}/$i"`" >> "$2"
+                        done
+                        echo "[RMDIR] `rmdir -v "${instdir}/pkgsrc"`" >> "$2"
+                    fi
+                    if [ ! "${instdir}/Makefile" ] ; then
+                        return 1
+                    fi
                     ;;
             esac
         done
         xb_netbsd_gauge_percent "Done" 100
     else # [ -z "$1" ]
-        local wget_args="--waitretry=$FTP_TIMEOUT --tries=$FTP_RETRIES --directory-prefix='${downdir}'"
-            for i in $downwnfiles; do
+        #TODO: test scripted install
+        debug "downfiles=\"$downfiles\""
+        debug "downdir=\"$downdir\""
+        debug "instdir=\"$instdir\""
+
+        if [ ! -d "${downdir}/$1" ] ; then
+            echo "`mkdir -p "${downdir}/$1"`"
+        fi
+
+        for i in $downfiles; do
             case $i in
                 *.tar.xz.*)
-                    #wget_args="${wget_args} --progress=dot:default"
-                    wget ${wget_args} "${netbsd_ftp_pkgsrc}/${i}" >> "$1"
+                    debug "Donwloading $netbsd_ftp_pkgsrc/${i}" >> "$2"
+                    wget --progress="dot:default" --waitretry=$FTP_TIMEOUT \
+                        --tries=$FTP_RETRIES --directory-prefix="${downdir}/$1" \
+                        "${netbsd_ftp_pkgsrc}/${i}"
+
                     if [ $? -ne 0 ] ; then
+                        error "Unable to download \"${i}\"!"
                         return 1
                     fi
                     ;;
                 *.tar.xz)
-                    #wget_args="${wget_args} --progress=dot:mega"
                     local rv=1
                     local retries=0
 
                     while ([ $rv -ne 0 ] && [ $retries -le $FTP_RETRIES ]) ; do
                         retries=$(( $retries + 1 ))
-                        wget ${wget_args} "${netbsd_ftp_pkgsrc}/${i}"
+                        wget --progress="dot:binary" --waitretry=$FTP_TIMEOUT \
+                            --tries=$FTP_RETRIES \
+                            --directory-prefix="${downdir}/$1" \
+                            "${netbsd_ftp_pkgsrc}/${i}"
                         rv=$?
 
                         if ([ $rv -eq 0 ] \
-                                && [ "`cat "${downdir}/${i}.MD5" | grep "$i" | cut -f 3 -w -`" == "`md5 "${downdir}/${i}" | cut -f 3 -w -`" ] \
-                                && "`cat "${downdir}/${i}.SHA1" | grep "$i" | cut -f 3 -w -`" == "`sha1 "${downdir}/${i}" | cut -f 3 -w -`" ]) ; then
+                                && [ "`cat "${downdir}/${i}.MD5" | cut -f 4 -w -`" == "`md5 -q "${downdir}/${i}"`" ] \
+                                && [ "`cat "${downdir}/${i}.SHA1" | cut -f 4 -w -`" == "`sha1 -q "${downdir}/${i}"`" ]) ; then
                             rv=0
                         else
                             rv=1
+                            echo "[RM] `rm -v ${downdir}/${i}`"
                             sleep $FTP_TIMEOUT
                         fi
                     done
@@ -388,10 +469,24 @@ xb_netbsd_install_pkgsrc() {
                         error "Unable to download \"${i}\"!"
                         return 1
                     fi
-                    tar -xJvf "${downdir}/$i" --strip-components 1 -C "${instdir}"
+                    [ ! -d "$instdir" ] && echo "[MKDIR] `mkdir -v "$instdir"`"
+                    echo "[Extracting] \"$i\" ..."
+                    local strip_components="--strip-components 1"
+                    debug "strip_componenets=${strip_componenets}"
+                    tar -xJvf "${downdir}/${i}" ${strip_componenst} -C "${instdir}"
+                    if [ ! -r ${instdir}/Makefile ] && [ -d "${instdir}/pkgsrc" ] ; then
+                        for i in `ls "${instdir}/pkgsrc/"`; do
+                            echo "[MV] `mv -v "${instdir}/pkgsrc/$i" "${instdir}/$i"`"
+                        done
+                        echo "[RMDIR] `rmdir -v "${instdir}/pkgsrc"`"
+                    fi
+                    if [ ! "${instdir}/Makefile" ] ; then
+                        return 1
+                    fi
                     ;;
             esac
         done
+
     fi
 }
 

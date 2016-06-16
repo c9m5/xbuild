@@ -33,7 +33,7 @@
 #
 # Changelog:
 
-xbuild_version="0.0.0"
+xbuild_version="0.0.2"
 
 ################################################################################
 # xbuild directories
@@ -83,9 +83,6 @@ if [ ! -d "$xbuild_tempdir" ] ; then
     mkdir -p "${xbuild_tempdir}"
 fi
 trap "rm -rf $xbuild_tempdir" EXIT QUIT
-#########
-echo X
-##########
 if ([ "${xbuild_is_installed}" == "yes" ] && [ -r "${XBUILD_CONFIGDIR}/xbuild.rc" ]) ; then
     debug "Loading \"${XBUILD_CONFIGDIR}/xbuild.rc\""
     . "${XBUILD_CONFIGDIR}/xbuild.rc"
@@ -107,17 +104,12 @@ if ([ "${xbuild_is_installed}" == "yes" ] && [ -r "${XBUILD_CONFIGDIR}/xbuild.rc
         done
     fi
 fi
-#############
-echo XX
-############
 : ${XBUILD_DOWNLOADDIR:="${HOME}/Downloads/xbuild"}
 echo $XBUILD_DOWNLOADDIR
 if [ ! -d "${XBUILD_DOWNLOADDIR}" ] ; then
     mkdir -p "$XBUILD_DOWNLOADDIR"
 fi
-###########
-echo XXX
-###########
+
 ################################################################################
 # Programs
 ################################################################################
