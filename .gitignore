@@ -4,6 +4,8 @@
 *.temp
 *.log
 *.test
+*.old
+*.bak
 
 # files in etc
 etc/*.rc
