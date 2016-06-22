@@ -43,7 +43,7 @@
 
 if [ ! -r "${xbuild_boardlist_file}" ] ; then
     for i in `ls ${xbuild_libdir}/board/*.board` ; do
-        if  ([ -r "$i" ] && [ ! -L "$i$" ]); then
+        if  ([ -r "$i" ] && [ ! -L "$i" ]); then
             . "$i"
             _oslist=""
             for i in BOARD_OSLIST; do
@@ -54,7 +54,7 @@ if [ ! -r "${xbuild_boardlist_file}" ] ; then
                 fi
             done
             _boardfile=${i##"${xbuild_libdir}/board/"}
-            echo "${_boardfile}:${BOARD_ID}:${BOARD_NAME}:${BOARD_TITLE}:${_oslist}"
+            echo "${_boardfile}:${BOARD_ID}:${BOARD_NAME}:${BOARD_TITLE}:${_oslist}" >> "${xbuild_boardlist_file}"
         fi
     done
 fi

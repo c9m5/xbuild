@@ -70,18 +70,19 @@ xb_dialog_select_board() {
     local default="$1"
     ifs0="$IFS"
     IFS=""\\n
-    boarditems=$(for i in `cat ${xbuild_boardlist_file}`; do
-            local bid="`echo -n "$i" | cut -f${BOARDLISTID_ID} -d:`"
-            local btitle="`echo -n "$i" | cut -f${BOARDLISTID_TITLE} -d:`"
-            local bstatus="off"
-            [ "$default" == "$bid" ] && bstatus="on"
-            echo -n "\"${bid}\" \"${btitle}\" $bstatus "
-        done)
+    boarditems=
     IFS="$ifs0"
 
-    board=$(eval dialog --stdout --backtitle "${xbuild_dialog_backtitle}"
-        --title "Select Board" \
-        --radiolist "Please selet a Board." 12 50 6 ${boarditems})
+    board=$(eval dialog --clear --stdout "--backtitle \"${xbuild_dialog_backtitle}\"" \
+        "--title \"Select Board\"" \
+        "--radiolist \"Please selet a Board.\" 12 50 6" \
+            $(for i in `cat ${xbuild_boardlist_file}`; do
+                local bid="`echo -n "$i" | cut -f${BOARDLISTID_ID} -d:`"
+                local bname="`echo -n "$i" | cut -f${BOARDLISTID_NAME} -d:`"
+                local bstatus="off"
+                [ "$default" == "$bid" ] && bstatus="on"
+                [ -n "$bid" ] && [ -n "$bname" ] && echo -n "\"${bid}\" \"${bname}\" \"$bstatus\" "
+            done) )
     rv=$?
     local board
 
@@ -223,9 +224,18 @@ xb_dialog_project_new() {
             restart_dialog="no"
             return $rv;
         fi
+
         prj_name="`echo $x | cut -f 1 -d '|' -`"
         prj_dir="`echo $x | cut -f 2 -d '|' -`"
-        prj_desc="`echo $x | cut -f 3 -d '|' -`"
+        prj_board="`echo $x | cut -f 3 -d '|' -`"
+        prj_desc="`echo $x | cut -f 4 -d '|' -`"
+
+        clear
+        debug "prj_name=$prj_name"
+        debug "prj_dir=$prj_dir"
+        debug "prj_board=$prj_board"
+        debug "prj_desc=$prj_desc"
+        sleep 2
 
         if [ -z "$prj_dir" ] ; then
             dialog --backtitle "$xbuild_dialog_backtitle" \
@@ -233,12 +243,8 @@ xb_dialog_project_new() {
                 --msgbox "Directory must not be an emtpy string!" 6 40
             continue
         fi
-        if ([ -z "$prj_name" ] && [ -z "prj_dir" ]) ; then
-            dialog --backtitle "$xbuild_dialog_backtitle" \
-                --title "ERROR: Name" \
-                --msgbox "Name and Dir must not be emtpy strings!" 6 40
-            continue
-        fi
+        [ -z "$prj_name" ] && prj_name="$prj_dir"
+
 
         prj_board=$(xb_dialog_select_board "${prj_board}")
         ([ $? -ne 0 ] || [ -z "$prj_board" ]) && continue

@@ -33,7 +33,7 @@
 #
 # Changelog:
 
-xbuild_version="0.0.2"
+xbuild_version="0.0.3"
 
 ################################################################################
 # xbuild directories
