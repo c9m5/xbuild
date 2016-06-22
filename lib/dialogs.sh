@@ -33,6 +33,113 @@
 #
 # Changelog:
 
+################################################################################
+# Misc Dialogs
+################################################################################
+
+xb_dialog_sudo_passwd() {
+    : ${__xbuild_sudo_passwd_set:="no"}
+    : ${SUDO_TRIES:=3}
+    __xbuild_sudo_passwd=""
+
+    if [ "$__xbuild_sudo_passwd_set" == "no" ] ; then
+        local tries=0
+        local rv=0
+        local ret=0
+
+        while ([ $rv -eq 0 ] && [ "$__xbuild_sudo_passwd_set" == "no" ] && [ $tries -lt $SUDO_TRIES ]); do
+
+            tries=$(( $tries + 1 ))
+            __xbuild_sudo_passwd=$(dialog --stdout --backtitle "${xbuild_dialog_backtitle}" \
+                --title "Password" --insecure --passwordbox "Please enter your password." 6 40)
+            ret=$(echo "$__xbuild_sudo_passwd" | sudo  -S sh -s << EOF
+echo "yes"
+EOF
+)
+            [ $? -eq 0 ] && [ "$ret" = "yes" ] && __xbuild_sudo_passwd_set="yes"
+        done
+    fi
+    [ "$__xbuild_sudo_passwd_set" == "yes" ] && echo "$__xbuild_sudo_passwd"
+}
+
+################################################################################
+# Board Dialogs
+################################################################################
+
+xb_dialog_select_board() {
+    local default="$1"
+    ifs0="$IFS"
+    IFS=""\\n
+    boarditems=$(for i in `cat ${xbuild_boardlist_file}`; do
+            local bid="`echo -n "$i" | cut -f${BOARDLISTID_ID} -d:`"
+            local btitle="`echo -n "$i" | cut -f${BOARDLISTID_TITLE} -d:`"
+            local bstatus="off"
+            [ "$default" == "$bid" ] && bstatus="on"
+            echo -n "\"${bid}\" \"${btitle}\" $bstatus "
+        done)
+    IFS="$ifs0"
+
+    board=$(eval dialog --stdout --backtitle "${xbuild_dialog_backtitle}"
+        --title "Select Board" \
+        --radiolist "Please selet a Board." 12 50 6 ${boarditems})
+    rv=$?
+    local board
+
+    [ $rv -eq 0 ] && [ -n "$board" ] && echo "$board"
+
+    return $rv
+}
+
+################################################################################
+# OS-Dialogs
+################################################################################
+
+xb_dialog_select_os() {
+    _args="`getopt "b:" $*`"
+    [ $? - ne 0 ] && return 2
+    local _args
+    set -- $_args
+
+    local _oslist=""
+
+    while [ $# -gt 0 ] ; do
+        case $1 in
+            -b)
+                local bid="`cat ${xbuild_boardlist_file} | grep "$2" | cut -f$BOARDLISTID_ID -d:`"
+                local bname="`cat ${xbuild_boardlist_file} | grep "$2" | cut -f$BOARDLISTID_NAME -d:`"
+                local bos="`cat ${xbuild_boardlist_file} | grep "$2" | cut -f$BOARDLISTID_OSLIST -d:`"
+                local n=1;
+                while [ -n "`echo -n $bos | cut -f$n -d$BOARD_OSLIST_SEPARATOR`" ] ; do
+                    _oslist="${_oslist} `echo $bos | cut -f$n -d$BOARD_OSLIST_SEPARATOR`"
+                    n=$(( $n + 1 ))
+                done
+                shift; shift
+                ;;
+            --)
+                shift; break
+                ;;
+        esac
+    done
+    [ -z "$_oslist" ] && _oslist="`xb_list_os`"
+
+    local rlmsg="Please select an Operating System."
+    local dlg_args="--stdout --backtitle \"${xbuild_dialog_backtitle}\" --title \"Operating System\" --no-items --radiolist \"${rlmsg}\" 9 30 4"
+    local ositems=$(for i in $_oslist; do
+            local st="off"
+            [ "$i" == "$1" ] && st="on"
+            echo -n "\"${i}\" ${st} "
+        done)
+    os=$(eval dialog ${dlg_args} ${dlg_args} ${ositems})
+    rv=$?
+    local os rv
+    [ $rv -eq 0 ] && echo "$os"
+    return $rv
+}
+
+################################################################################
+# Installer
+################################################################################
+
 xb_install_menu() {
     local rv=0
     while [ $rv -eq 0 ] ; do
@@ -60,6 +167,10 @@ xb_install_menu() {
     done
 }
 
+################################################################################
+# Project Management
+################################################################################
+
 xb_projects_list_dialog() {
     prjlist=$(for i in `ls "$XBUILD_ROOT"`; do
         if [ -e "${XBUILD_ROOT}/${i}/XBUILD_PROJECT" ] ; then
@@ -86,20 +197,105 @@ xb_projects_list_dialog() {
     return rv
 }
 
-xb_projects_menu() {
+
+
+xb_dialog_project_new() {
+    prj_name=""
+    prj_dir=""
+    prj_os=""
+    prj_board=""
+    prj_desc=""
+
+    local restart_dialog="yes"
+
+    while [ "$restart_dialog" == "yes" ] ; do
+        x=$(dialog --stdout --backtitle "$xbuild_dialog_backtitle" \
+            --title "New Project" --output-separator '|'\
+            --form "Project Data:" 10 50 4 \
+                "Title:" 1 1 "$prj_name" 1 12 40 0 \
+                "Directory:" 2 1 "$prj_dir" 2 12 40 0 \
+                "Board:" 3 1 "$prj_board" 2 12 40 0 \
+                "Description:" 4 1 "$prj_desc" 4 12 40 0)
+        rv=$?
+
+        local rv x
+        if [ $rv -ne 0 ] ; then
+            restart_dialog="no"
+            return $rv;
+        fi
+        prj_name="`echo $x | cut -f 1 -d '|' -`"
+        prj_dir="`echo $x | cut -f 2 -d '|' -`"
+        prj_desc="`echo $x | cut -f 3 -d '|' -`"
+
+        if [ -z "$prj_dir" ] ; then
+            dialog --backtitle "$xbuild_dialog_backtitle" \
+                --title "ERROR: Directory" \
+                --msgbox "Directory must not be an emtpy string!" 6 40
+            continue
+        fi
+        if ([ -z "$prj_name" ] && [ -z "prj_dir" ] ; then
+            dialog --backtitle "$xbuild_dialog_backtitle" \
+                --title "ERROR: Name" \
+                --msgbox "Name and Dir must not be emtpy strings!" 6 40
+            continue
+        fi
+
+        prj_board=$(xb_dialog_select_board "${prj_board}")
+        ([ $? -ne 0 ] || [ -z "$prj_board" ]) && continue
+
+
+        # Select an OS for building.
+        prj_os=$(xb_dialog_select_os -b "${prj_board}" "${prj_os}")
+        if ([ $? -eq 0 ] && [ -n "$prj_os" ]) ; then
+            local osfuncprefix="`xb_os_get_funcprefix $prj_os`"
+            local osvarprefix="`xb_os_get_varprefix "$prj_os"`"
+        else
+            continue
+        fi
+
+
+        xb_project_new_add_cmd -m "Creating Project Base..." \
+            "xb_project_new_base -B \"${prj_board}\" -O \"${prj_os}\" -d \"${prj_dir}\" -D \"${prj_desc}\""
+
+        local prj_enable=$(eval echo -n "$`echo -n "${osvarprefix}"`_dialog_project_new_enable")
+        if ([ "`xb_is_true $prj_enable`" == "yes" ]); then
+            eval "$`echo -n "${osfuncprefix}"`_dialog_project_new"
+        fi
+    done
+}
+
+xb_project_management_menu() {
     local rv=0
     while [ $rv -eq 0 ] ; do
         x=$(dialog --stdout --backtitle "$xbuild_Dialog_backtitle" \
-            projects --stdout
+            --title "Project Management" \
+            --menu "Project Management" 12 40 5\
+                "X" "Exit" \
+                "N" "Create New Project" \
+                "O" "Open an existing project" \
+                "D" "Delete a project"
         )
         rv=$?
         local x
         if [ $rv -eq 0 ] ; then
             case $x in
+                X)
+                    break;;
+                N)
+                    xb_dialog_project_new
+                    ;;
+                O)
+                    ;;
+                D)
+                    ;;
             esac
         fi
     done
 }
+
+################################################################################
+# Main menu
+################################################################################
 
 xb_main_menu() {
     rv=0; local rv
@@ -110,7 +306,6 @@ xb_main_menu() {
                 --title "XBuild" \
                 --menu "XBuild Main Menu" 12 30 5\
                     "X" "Exit" \
-                    "1" "Create new Project" \
                     "P" "Projects" \
                     "C" "Configure XBuild" \
                     "I" "Install Components")
@@ -119,7 +314,8 @@ xb_main_menu() {
         if [ $rv -eq 0 ] ; then
             case $x in
                 X)
-                    break;;
+                    break
+                    ;;
                 1)
                     #xb_create_project_dialog
                     ;;
@@ -130,11 +326,12 @@ xb_main_menu() {
                     xb_install_menu
                     ;;
                 P)
-                    xb_projects_menu
+                    xb_project_management_menu
                     ;;
             esac
         fi
     done
 }
+
 
 

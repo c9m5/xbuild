@@ -108,8 +108,57 @@ xb_is_false() {
 }
 
 ################################################################################
-# xbuild_os_list functions
+# misc functions
 ################################################################################
+# * $1 count
+# * $2 n
+xb_calc_perc() {
+    [ $# -ne 2 ] && exit 1
+
+    x="$(( ($2 * 100) / $1 ))"
+    [ $? - ne 0 ] && exit 2
+
+    [ $x -gt 100 ] && x="100"
+    local x
+    echo "$x"
+}
+
+# * $1 min value
+# * $2 max value
+# * $3 count
+# * $4 n
+xb_calc_minmax_perc() {
+    [ $# -ne 4 ] && return 1
+
+    x=$(( ( ($4 * ($2 - $1) ) / $3) + $1 ))
+    [ $? -ne 0 ] && return 2
+
+    [$x -gt $2] && x="$2"
+    local x
+    echo "$x"
+}
+
+# * $1 n_steps
+# * $2 step
+# * $3 count
+# * $4 n
+xb_calc_step_perc() {
+    [ $# -ne 4 ] && exit 1
+
+    min=$(( ($2 * 100) / $1 ))
+    [ $? -ne0 ] && return 2
+
+    max=$(( ( ($2 + 1) * 100) / $1 ))
+    [ max -gt 100 ] && max=100
+
+    x=$(( ( ($4 * ($max - $min) ) / $3) + $min ))
+    [ $? -ne 0 ] && return 2
+
+    [$x -gt $max] && x="$max"
+    local min max x
+    echo "$x"
+}
 
 # name install current
+
 

@@ -104,11 +104,13 @@ if ([ "${xbuild_is_installed}" == "yes" ] && [ -r "${XBUILD_CONFIGDIR}/xbuild.rc
         done
     fi
 fi
-: ${XBUILD_DOWNLOADDIR:="${HOME}/Downloads/xbuild"}
-echo $XBUILD_DOWNLOADDIR
-if [ ! -d "${XBUILD_DOWNLOADDIR}" ] ; then
-    mkdir -p "$XBUILD_DOWNLOADDIR"
+
+if [ "xbuild_is_installed" == "yes" ] ; then
+    : ${XBUILD_CACHEDIR:="${XBUILD_BASEDIR}/cache}"}
+    : ${XBUILD_DOWNLOADDIR:="${XBUILD_CACHEDIR}"}
 fi
+
+. "${xbuild_libdir}/dialogs.sh"
 
 ################################################################################
 # Programs
@@ -130,20 +132,19 @@ if [ -z "$XBUILD_SVN" ] ; then
     error "Please install \"svn\" or \"svnlite\"!"
 fi
 : ${SVN_RETRIES:=10}
-: ${SVN_RETRY_SLEEP:=5}
+: ${SVN_RETRY_TIMEOUT:=5}
+: ${CVS_RETRIES:=10}
+: ${CVS_RETRY_TIMEOUT:=5}
+: ${FTP_RETRIES:=10}
+: ${FTP_RETRY_TIMEOUT:=10}
 
 ################################################################################
-#
+# Library Files
 ################################################################################
 
-#. "${xbuild_oslibdir}/init.sh"
-
-
-################################################################################
-# Load environment
-################################################################################
-
-. "${xbuild_libdir}/dialogs.sh"
+. "${xbuild_libdir}/os.sh"
+. "${xbuild_libdir}/board.sh"
+. "${xbuild_libdir}/projects.sh"
 
 # load supported operating systems
 xbuild_os_list=""
@@ -163,7 +164,15 @@ for i in ${xbuild_oslibdir}/* ; do
 done
 
 ################################################################################
-# functions
+# Boards
 ################################################################################
+
+
+
+
+################################################################################
+# Functions
+################################################################################
+
 
 
