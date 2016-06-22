@@ -1,0 +1,76 @@
+#!/bin/sh
+#
+# Author(s): c9m5
+# File: xbuild/board/rpib.board
+# Description: Description
+#
+################################################################################
+# This is free and unencumbered software released into the public domain.      #
+#                                                                              #
+# Anyone is free to copy, modify, publish, use, compile, sell, or              #
+# distribute this software, either in source code form or as a compiled        #
+# binary, for any purpose, commercial or non-commercial, and by any            #
+# means.                                                                       #
+#                                                                              #
+# In jurisdictions that recognize copyright laws, the author or authors        #
+# of this software dedicate any and all copyright interest in the              #
+# software to the public domain. We make this dedication for the benefit       #
+# of the public at large and to the detriment of our heirs and                 #
+# successors. We intend this dedication to be an overt act of                  #
+# relinquishment in perpetuity of all present and future rights to this        #
+# software under copyright law.                                                #
+#                                                                              #
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,              #
+# EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF           #
+# MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.       #
+# IN NO EVENT SHALL THE AUTHORS BE LIABLE FOR ANY CLAIM, DAMAGES OR            #
+# OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,        #
+# ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR        #
+# OTHER DEALINGS IN THE SOFTWARE.                                              #
+#                                                                              #
+# For more information, please refer to <http://unlicense.org>                 #
+################################################################################
+#
+# Changelog:
+
+BOARD_TITLE="RaspberryPI B"
+BOARD_NAME="RaspberryPiB"
+BOARD_ID="rpib"
+BOARD_OSLIST="FreeBSD NetBSD"
+
+################################################################################
+# FreeBSD Config
+################################################################################
+
+#if [ "`echo "${PROJECT_OS}" | sed -e s/freebsd/FREEBSD/i`" == "FREEBSD" ] ; then
+#
+#fi
+
+FREEBSD_ENABLE="yes"
+FREEBSD_UBOOT_ENABLE="yes"
+FREEBSD_NICE="nice -10"
+FREEBSD_ARCH="armv6"
+FREEBSD_ALTARCH=""
+FREEBSD_UBLDRADDR="0x0"
+FREEBSD_KERNCONF="RPIB"
+case `uname -o` in
+    FreeBSD)
+        FREEBSD_MKJOBS="`sysctl -n hw.ncpu`"
+        ;;
+    NetBSD)
+        FREEBSD_MKJOBS="2"
+        ;;
+    *)
+        FREEBSD_MKJOBS="2"
+        ;;
+esac
+
+[ -r "${XBUILD_CONFIGDIR}/FreeBSD.src.conf" ] && FREEBSD_SRCCONF="${XBUILD_CONFIGDIR}/FreeBSD.src.conf"
+[ -r "${xbuild_project_configdir}/src.conf" ] && FREEBSD_SRCCONF="${xbuild_project_configdir}/src.conf"
+
+
+[ -r "${XBUILD_CONFIGDIR}/FreeBSD.make.conf" ] && FREEBSD_MAKECONF="${XBUILD_CONFIGDIR}/FreeBSD.make.conf"
+[ -r "${xbuild_project_configdir}/make.conf" ] && FREEBSD_MAKECONF="${xbuild_project_configdir}/make.conf"
+
+
+
