@@ -33,7 +33,7 @@
 #
 # Changelog:
 
-: ${xbuild_oslist_file="${XBUILD_CONFIG_DIR}/oslist"
+: ${xbuild_oslist_file="${XBUILD_CONFIG_DIR}/oslist"}
 
 xb_os_is_registered() {
     if [ "`cat "$xbuild_oslist_file" | cut -f1 -d: | grep "$1"`"  == "$1" ] ; then
@@ -93,7 +93,7 @@ xb_list_os() {
 
 xb_oslist_add() {
     a=$(getopt "f:n:t:u:v:" $*)
-    if [ $? -ne 0 ] ;
+    if [ $? -ne 0 ] ; then
         return 2
     fi
     set -- $a

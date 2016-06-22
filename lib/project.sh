@@ -166,6 +166,8 @@ xb_project_new_add_subcmd() {
                 else
                     cmdn="`[ $(( $__PRJ_CREATE_CMD - 1 )) -gt 0 ] && echo $(( $__PRJ_CREATE_CMD -1 )) || echo 0`"
                 fi
+                shift; shift
+                ;;
             -m)
                 msg="$2"
                 shift; shift
@@ -200,7 +202,7 @@ xb_project_dlgcreate() {
     local cmd_redir="2>&1"
     local cmd_out=">> \"$ofile\""
 
-    while [ $n -lt $__PRJ_CREATE_CMD ] ; then
+    while [ $n -lt $__PRJ_CREATE_CMD ] ; do
         subn=0
 
         local CMD=$(eval echo "$`echo "__PRJ_CREATE_CMD${n}"`")

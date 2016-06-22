@@ -212,10 +212,10 @@ xb_dialog_project_new() {
         x=$(dialog --stdout --backtitle "$xbuild_dialog_backtitle" \
             --title "New Project" --output-separator '|'\
             --form "Project Data:" 10 50 4 \
-                "Title:" 1 1 "$prj_name" 1 12 40 0 \
-                "Directory:" 2 1 "$prj_dir" 2 12 40 0 \
-                "Board:" 3 1 "$prj_board" 2 12 40 0 \
-                "Description:" 4 1 "$prj_desc" 4 12 40 0)
+                "Title:" 1 1 "$prj_name" 1 14 40 0 \
+                "Directory:" 2 1 "$prj_dir" 2 14 40 0 \
+                "Board:" 3 1 "$prj_board" 3 14 40 0 \
+                "Description:" 4 1 "$prj_desc" 4 14 40 0)
         rv=$?
 
         local rv x
@@ -233,7 +233,7 @@ xb_dialog_project_new() {
                 --msgbox "Directory must not be an emtpy string!" 6 40
             continue
         fi
-        if ([ -z "$prj_name" ] && [ -z "prj_dir" ] ; then
+        if ([ -z "$prj_name" ] && [ -z "prj_dir" ]) ; then
             dialog --backtitle "$xbuild_dialog_backtitle" \
                 --title "ERROR: Name" \
                 --msgbox "Name and Dir must not be emtpy strings!" 6 40

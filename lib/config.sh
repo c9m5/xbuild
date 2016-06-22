@@ -144,7 +144,7 @@ fi
 
 . "${xbuild_libdir}/os.sh"
 . "${xbuild_libdir}/board.sh"
-. "${xbuild_libdir}/projects.sh"
+. "${xbuild_libdir}/project.sh"
 
 # load supported operating systems
 xbuild_os_list=""
