@@ -490,3 +490,4 @@ xb_netbsd_install_pkgsrc() {
     fi
 }
 
+
