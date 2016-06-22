@@ -146,4 +146,90 @@ xb_freebsd_install_menu() {
     return $rv
 }
 
+################################################################################
+# Project Dialogs
+################################################################################
+
+xb_freebsd_dialog_project_select_sources() {
+    for i in `ls -d ${XBUILD_BASEDIR}/src.FreeBSD*`; do
+        srcitem="${srcitem} \"${i##${XBUILD_BASEDIR}/src.}\" off"
+    done
+    local dlg_args="--stdout --backtitle \"${xbuild_dialog_backtitle}\" --separate-widget \":\""
+    local rv=0
+    local src=""
+
+    local w0="--title \"FreeBSD Sources\" --no-items --radiobox=\"Please select sources\" 10 40 4 ${srcitem}"
+    local w1="--and-widget --clear --title \"Install Method\" --radiobox \"How to install sources.\" l \"Symlink sources\" on m \"Nullfs Mount\" off c \"Copy Sources\" off"
+    while ([ $rv -eq 0 ] && [ -z "$src" ]); do
+        src=$(eval "dialog ${dlg_args} ${w0} ${w1}")
+        rv=$?
+    done
+
+    [ -z "`echo "$src" | cut -f2 -d:`" ] && src="`echo $src | cut -f1 -d:`:l"
+    [ $rv -eq 0 ] && echo "$src"
+
+
+    return $rv
+}
+
+xb_freebsd_dialog_project_select_ports() {
+    portsitems="\"None\" \"Don't use Ports.\" on"
+    if ([ "`uname -o`" == "FreeBSD" ] && [ "-r /usr/ports/Makefile" ]) ; then
+        portsitems="${portsitems} \"sys:L\" \"Ports from System (SYMLINK)\" off"
+        portsitems="${portsitems} \"sys:M\" \"Ports from System (NULLFSMOUNT)\" off"
+        portsitems="${portsitems} \"sys:C\" \"Ports from System (COPY)\" off"
+    fi
+    if [ -d "${XBUILD_BASEDIR}/FreeBSD.ports" ] ; then
+        portsitems="${portsitems} \"base:L\" \"Ports from XBUILD (SYMLINK)\" off"
+        portsitems="${portsitems} \"base:M\" \"Ports from XBUILD (NULLFSMOUNT)\" off"
+        portsitems="${portsitems} \"base:C\" \"Ports from XBUILD (COPY)\" off"
+    fi
+    if [ -d "${XBUILD_BASEDIR}/FreeBSD.ports-CURRENT"] ; then
+        portsitems="${portsitems} \"current:L\" \"Ports from XBUILD (SYMLINK)\" off"
+        portsitems="${portsitems} \"current:M\" \"Ports from XBUILD (NULLFSMOUNT)\" off"
+        portsitems="${portsitems} \"current:C\" \"Ports from XBUILD (COPY)\" off"
+    fi
+
+    local dargs="--stdout --backtitle \"${xbuild_dialog_backtitle}\" --title \"FreeBSD Ports\""
+    ports=$(eval "dialog ${dargs} --radiolist \"Please select install method for ports.\" 12 50 6 ${portsitems}")
+    rv=$?; local rv
+
+    [ $rv -eq 0 ] && [ -n "$ports" ] && echo "$ports"
+    return $rv
+}
+
+xb_freebsd_dialog_project_new() {
+    local rv=0
+
+    local src=""
+    local ports=""
+    local prj_dir="$1"
+
+    xb_project_new_add_cmd "xb_freebsd_project_new_base \"${prj_dir}\""
+
+    while ([ $rv -eq 0 ] && [ -z "$src" ]) ; do
+        src="`xb_freebsd_dialog_project_select_sources`"
+        rv=$?
+    done
+    [ $rv -ne 0 ] && return $rv
+
+
+    xb_project_new_add_cmd "xb_freebsd_project_new_sources -d "$src" \"${prj_dir}\""
+
+    while ([ $rv -eq 0 ] && [ -z "$ports" ]) ; do
+        ports="`xb_freebsd_dialog_project_select_ports`"
+        rv=$?
+    done
+    [ $rv -ne 0 ] && return $rv
+
+    xb_project_new_add_cmd "xb_freebsd_project_new_ports -d \"${ports}\" \"${prj_dir}\""
+
+    for i in ${xbuild_backup_files}; do
+    done
+
+    #TODO: add doctree
+
+    #xb_project_new_add_cmd "xb_freebsd_project_new_config \"${prj_dir}\""
+}
+
 
